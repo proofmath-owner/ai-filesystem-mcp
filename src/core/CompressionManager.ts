@@ -99,21 +99,24 @@ export class CompressionManager {
   async extractArchive(archivePath: string, destination: string): Promise<ExtractionResult> {
     await fs.mkdir(destination, { recursive: true });
     
+    // Ensure absolute path for extract-zip
+    const absoluteDestination = path.resolve(destination);
+    
     const format = this.detectFormat(archivePath);
     let files: string[] = [];
     
     switch (format) {
       case 'zip':
-        await extract(archivePath, { dir: destination });
-        files = await this.listExtractedFiles(destination);
+        await extract(archivePath, { dir: absoluteDestination });
+        files = await this.listExtractedFiles(absoluteDestination);
         break;
       case 'tar':
       case 'tar.gz':
         await tar.extract({
           file: archivePath,
-          cwd: destination
+          cwd: absoluteDestination
         });
-        files = await this.listExtractedFiles(destination);
+        files = await this.listExtractedFiles(absoluteDestination);
         break;
       default:
         throw new Error(`Unsupported archive format: ${format}`);
@@ -122,7 +125,7 @@ export class CompressionManager {
     // Calculate total size
     let totalSize = 0;
     for (const file of files) {
-      const stat = await fs.stat(path.join(destination, file));
+      const stat = await fs.stat(path.join(absoluteDestination, file));
       if (stat.isFile()) {
         totalSize += stat.size;
       }

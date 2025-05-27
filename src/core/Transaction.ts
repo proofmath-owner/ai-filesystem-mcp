@@ -1,5 +1,6 @@
 import { promises as fs } from 'fs';
 import * as path from 'path';
+import * as os from 'os';
 
 interface FileOperation {
   type: 'write' | 'update' | 'remove';
@@ -22,7 +23,8 @@ export class Transaction {
   private committed = false;
 
   constructor() {
-    this.tempDir = path.join(process.cwd(), '.ai-fs-transactions', Date.now().toString());
+    // 시스템 임시 디렉토리 사용 (권한 문제 방지)
+    this.tempDir = path.join(os.tmpdir(), '.ai-fs-transactions', Date.now().toString());
   }
 
   // 파일 쓰기 작업 추가

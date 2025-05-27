@@ -75,10 +75,10 @@ async function testFileSystem() {
     console.log('\n🧹 Cleaning up test files...');
     const cleanup = fs.createTransaction();
     cleanup
-      .delete('test.txt')
-      .delete('test2.txt')
-      .delete('transaction1.txt')
-      .delete('transaction2.txt');
+      .remove('test.txt')
+      .remove('test2.txt')
+      .remove('transaction1.txt')
+      .remove('transaction2.txt');
     await cleanup.commit();
     
     console.log('\n✅ All tests completed successfully!');

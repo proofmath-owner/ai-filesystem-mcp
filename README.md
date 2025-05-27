@@ -256,15 +256,22 @@ See [REFACTORING.md](./REFACTORING.md) for detailed progress.
 
 ## Changelog
 
-### v2.1.0 (2025-01-28) - Refactoring Update 🎉
-- ✅ **100% Command Pattern Migration Complete**
-  - All 39 commands migrated from 700+ line switch statement
-  - Clean, modular architecture with category-based organization
-  - Enhanced type safety and maintainability
-- 📄 Detailed refactoring documentation:
-  - [REFACTORING.md](./REFACTORING.md) - Overview and progress
-  - [PHASE2-PLAN.md](./PHASE2-PLAN.md) - FileSystemManager decomposition plan
-  - [PHASE3-PLAN.md](./PHASE3-PLAN.md) - Performance optimization plan
+### v2.1.0 (2025-05-28) - Phase 1 Complete! 🎉
+- ✅ **Phase 1: 100% Complete**
+  - All 39 commands migrated to Command Pattern
+  - All tests passing (100% success rate)
+  - Fixed all edge cases (transaction, extract_archive)
+  - Added comprehensive test suite
+  - Documentation fully updated
+- 📄 Key improvements:
+  - Transaction now uses system temp directory (no permission issues)
+  - Extract archive handles absolute paths correctly
+  - Git commands work properly in actual repositories
+- 🧪 Test coverage:
+  - Unit tests for core components
+  - Integration tests for all 39 commands
+  - Edge case tests for transactions
+- 🚀 Ready for Phase 2: Service Architecture decomposition
 
 ### v2.0.0 (2024-01-26)
 - 🎉 10 major improvements implemented

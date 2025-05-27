@@ -14,6 +14,12 @@
     "test": "npm run build && node test.js",
     "test:refactored": "npm run build && node test-refactored.js",
     "test:jest": "jest",
+    "test:unit": "jest --testPathPattern=unit",
+    "test:integration": "jest --testPathPattern=integration", 
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:phase1": "npm run build && node test-phase1.js",
+    "validate:phase1": "npm run build && node debug-phase1.js",
     "clean": "rm -rf dist",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write 'src/**/*.ts'"
@@ -55,6 +61,8 @@
     "typescript": "^5.3.0",
     "tsx": "^4.6.0",
     "jest": "^29.7.0",
-    "@types/jest": "^29.5.0"
+    "@types/jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "@jest/globals": "^29.7.0"
   }
 }

@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "ai-filesystem": {
+      "command": "node",
+      "args": [
+        "/Users/Sangbinna/mcp/ai-filesystem-mcp/dist/index-refactored.js"
+      ]
+    }
+  }
+}
