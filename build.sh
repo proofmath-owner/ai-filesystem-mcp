@@ -1,3 +1,3 @@
 #!/bin/bash
-cd /Users/sangbinna/ai-filesystem-mcp
+cd /Users/Sangbinna/mcp/ai-filesystem-mcp
 npm run build

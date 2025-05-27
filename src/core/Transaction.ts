@@ -2,7 +2,7 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 
 interface FileOperation {
-  type: 'write' | 'update' | 'delete';
+  type: 'write' | 'update' | 'remove';
   path: string;
   content?: string;
   updates?: Array<{ oldText: string; newText: string }>;
@@ -46,9 +46,9 @@ export class Transaction {
   }
 
   // 파일 삭제 작업 추가
-  delete(filePath: string): Transaction {
+  remove(filePath: string): Transaction {
     this.operations.push({
-      type: 'delete',
+      type: 'remove',
       path: filePath
     });
     return this;
@@ -147,7 +147,7 @@ export class Transaction {
         await fs.writeFile(absolutePath, content, 'utf-8');
         break;
 
-      case 'delete':
+      case 'remove':
         await fs.unlink(absolutePath);
         break;
     }

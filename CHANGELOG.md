@@ -1,5 +1,39 @@
 # AI FileSystem MCP - Change Log
 
+## Version 2.1.0 - 2025-01-28 - Command Pattern Refactoring Complete 🎉
+
+### Major Architecture Changes
+
+#### Command Pattern Migration (100% Complete)
+- Successfully migrated all 39 commands from monolithic switch statement to Command Pattern
+- Completed migration of final 7 Metadata Commands:
+  - `analyze_project`
+  - `get_file_metadata`
+  - `get_directory_tree`
+  - `compare_files`
+  - `find_duplicate_files`
+  - `create_symlink`
+  - `diff_files`
+
+### Improvements
+- **Code Organization**: Commands now organized by category (file, search, git, security, etc.)
+- **Maintainability**: Each command is now a self-contained class with clear responsibilities
+- **Type Safety**: Enhanced type checking with dedicated input validation
+- **Extensibility**: Adding new commands is now as simple as creating a new Command class
+- **Testing**: Easier unit testing with isolated command implementations
+
+### Technical Details
+- Reduced main index.ts from 700+ lines to modular architecture
+- Created CommandRegistry for centralized command management
+- Implemented gradual migration strategy with LegacyCommands support
+- Added comprehensive validation helpers in base Command class
+
+### Next Steps (Phase 2 & 3)
+- Decompose FileSystemManager (31KB) into service modules
+- Implement Generic Command types for better type inference
+- Add Zod/io-ts for runtime type validation
+- Performance optimizations with streaming and worker threads
+
 ## Version 2.0.0 - Major Update
 
 ### New Features

@@ -137,7 +137,7 @@ const tools: Tool[] = [
             properties: {
               type: { 
                 type: 'string', 
-                enum: ['write', 'update', 'delete'],
+                enum: ['write', 'update', 'remove'],
                 description: 'Operation type' 
               },
               path: { type: 'string', description: 'File path' },
@@ -673,8 +673,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             case 'update':
               transaction.update(op.path, op.updates);
               break;
-            case 'delete':
-              transaction.delete(op.path);
+            case 'remove':
+              transaction.remove(op.path);
               break;
           }
         }

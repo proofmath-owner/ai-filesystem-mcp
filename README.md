@@ -233,11 +233,38 @@ We welcome contributions! Areas of focus:
 - Additional security patterns
 - Language-specific refactoring rules
 
-## License
+## Roadmap 🗺️
 
-MIT License - see LICENSE file for details
+### ✅ Phase 1: Command Pattern (Complete)
+- Migrated all 39 commands to Command Pattern
+- Removed monolithic switch statement
+- Improved code organization and testability
+
+### 🔄 Phase 2: Service Architecture (In Planning)
+- Decompose FileSystemManager into 10 services
+- Implement dependency injection
+- Add Zod for runtime type validation
+- Unified error handling system
+
+### 🚀 Phase 3: Performance Optimization (Future)
+- Event-based file watching (100x latency improvement)
+- Stream processing for large files (20x memory efficiency)
+- Worker thread pool for parallel operations (6x speed improvement)
+- Smart caching and memory management
+
+See [REFACTORING.md](./REFACTORING.md) for detailed progress.
 
 ## Changelog
+
+### v2.1.0 (2025-01-28) - Refactoring Update 🎉
+- ✅ **100% Command Pattern Migration Complete**
+  - All 39 commands migrated from 700+ line switch statement
+  - Clean, modular architecture with category-based organization
+  - Enhanced type safety and maintainability
+- 📄 Detailed refactoring documentation:
+  - [REFACTORING.md](./REFACTORING.md) - Overview and progress
+  - [PHASE2-PLAN.md](./PHASE2-PLAN.md) - FileSystemManager decomposition plan
+  - [PHASE3-PLAN.md](./PHASE3-PLAN.md) - Performance optimization plan
 
 ### v2.0.0 (2024-01-26)
 - 🎉 10 major improvements implemented
