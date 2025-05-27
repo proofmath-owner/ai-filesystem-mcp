@@ -27,7 +27,15 @@ import {
 // Git commands
 import {
   GitStatusCommand,
-  GitCommitCommand
+  GitCommitCommand,
+  GitInitCommand,
+  GitAddCommand,
+  GitPushCommand,
+  GitPullCommand,
+  GitBranchCommand,
+  GitLogCommand,
+  GitHubCreatePRCommand,
+  GitCloneCommand
 } from './git/GitCommands.js';
 
 // Code Analysis commands
@@ -124,7 +132,15 @@ export function createCommandRegistry(): CommandRegistry {
   // Git commands
   registry.registerMany([
     new GitStatusCommand(),
-    new GitCommitCommand()
+    new GitCommitCommand(),
+    new GitInitCommand(),
+    new GitAddCommand(),
+    new GitPushCommand(),
+    new GitPullCommand(),
+    new GitBranchCommand(),
+    new GitLogCommand(),
+    new GitHubCreatePRCommand(),
+    new GitCloneCommand()
   ]);
 
   // Code Analysis commands

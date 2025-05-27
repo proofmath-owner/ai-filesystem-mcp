@@ -75,11 +75,33 @@ AI-optimized Model Context Protocol (MCP) server for intelligent file system ope
 - **Dependency Analysis**: Project dependency graphs
 - **Import Management**: Automatic import optimization
 
-### Version Control
-- **Multi-VCS**: Git, SVN, Mercurial support
-- **Auto-commit**: Rule-based automatic commits
-- **Branch Management**: Create, switch, merge branches
-- **Conflict Resolution**: Smart merge conflict handling
+### Version Control (Enhanced in v2.1.1) 🆕
+- **Git Repository Management**:
+  - `git_init`: Initialize new repositories (regular or bare)
+  - `git_clone`: Clone repositories from URLs
+- **Staging & Commits**:
+  - `git_add`: Stage files or all changes
+  - `git_commit`: Commit with messages
+  - `git_status`: Check repository status
+- **Branch Operations**:
+  - `git_branch`: List, create, delete, checkout branches
+  - `git_checkout`: Switch between branches
+  - `git_merge`: Merge branches (coming soon)
+- **Remote Operations**:
+  - `git_push`: Push to remote repositories
+  - `git_pull`: Pull from remote repositories
+  - `git_remote`: Manage remotes (coming soon)
+- **History & Inspection**:
+  - `git_log`: View commit history
+  - `git_diff`: View changes (coming soon)
+- **GitHub Integration**:
+  - `github_create_pr`: Create pull requests via GitHub CLI
+  - `github_create_repo`: Create GitHub repositories (coming soon)
+  - `github_list_prs`: List pull requests (coming soon)
+- **Advanced Git Features**:
+  - `git_stash`: Stash changes (coming soon)
+  - `git_rebase`: Rebase branches (coming soon)
+  - `git_tag`: Tag management (coming soon)
 
 ## Installation
 
@@ -169,6 +191,41 @@ Use encrypt_file with:
 - password: "your-secure-password"
 ```
 
+### Git Operations (New!)
+```
+# Initialize a new repository
+Use git_init with:
+- path: "./my-project"
+
+# Stage all changes
+Use git_add with:
+- files: "."
+
+# Commit changes
+Use git_commit with:
+- message: "feat: add new feature"
+- files: ["src/feature.js", "test/feature.test.js"]
+
+# Push to remote
+Use git_push with:
+- remote: "origin"
+- branch: "main"
+
+# Create a pull request
+Use github_create_pr with:
+- title: "Add awesome feature"
+- body: "This PR adds..."
+
+# View commit history
+Use git_log with:
+- limit: 20
+
+# Branch operations
+Use git_branch with:
+- action: "create"
+- name: "feature/new-feature"
+```
+
 ## Performance Benchmarks
 
 - **Cache Hit Rate**: Up to 90% for frequently accessed files
@@ -255,6 +312,24 @@ We welcome contributions! Areas of focus:
 See [REFACTORING.md](./REFACTORING.md) for detailed progress.
 
 ## Changelog
+
+### v2.1.1 (2025-05-28) - Enhanced Git Integration! 🔀
+- 🎯 **New Git Commands Added**:
+  - Core Git operations: init, add, push, pull, clone
+  - Branch management: create, delete, switch, list
+  - GitHub integration: create pull requests
+  - History viewing: commit logs
+- 🔧 **Improved GitIntegration Class**:
+  - Extended with 25+ new methods
+  - GitHub CLI integration
+  - Better error handling
+- 📚 **Documentation Updates**:
+  - Added Git command examples
+  - Updated feature list
+- 🏗️ **Project Structure Improvements**:
+  - Reorganized files into logical directories
+  - Cleaned up test structure
+  - Updated package.json scripts
 
 ### v2.1.0 (2025-05-28) - Phase 1 Complete! 🎉
 - ✅ **Phase 1: 100% Complete**
