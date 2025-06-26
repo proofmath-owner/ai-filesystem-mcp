@@ -27,7 +27,8 @@
       "Bash(rg:*)",
       "Bash(kill:*)",
       "Bash(timeout:*)",
-      "Bash(gtimeout:*)"
+      "Bash(gtimeout:*)",
+      "Bash(npm test)"
     ],
     "deny": []
   }

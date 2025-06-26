@@ -1,37 +1,50 @@
 import { BaseCommand } from '../../base/BaseCommand.js';
 import { CommandResult, CommandContext } from '../../../core/interfaces/ICommand.js';
-import { CompressionService } from '../../../core/services/utils/CompressionService.js';
-
-const ExtractArchiveArgsSchema = {
-    type: 'object',
-    properties: {
-      // TODO: Add properties from Zod schema
-    }
-  };
-
+import { ICompressionService } from '../../../core/interfaces/ICompressionService.js';
 
 export class ExtractArchiveCommand extends BaseCommand {
   readonly name = 'extract_archive';
   readonly description = 'Extract files from an archive';
   readonly inputSchema = {
     type: 'object',
-    properties: {},
+    properties: {
+      archivePath: { 
+        type: 'string', 
+        description: 'Path to the archive file' 
+      },
+      outputPath: { 
+        type: 'string', 
+        description: 'Directory to extract files to' 
+      },
+      filter: { 
+        type: 'string',
+        description: 'File pattern to extract (optional)' 
+      },
+      overwrite: { 
+        type: 'boolean', 
+        description: 'Whether to overwrite existing files',
+        default: false 
+      }
+    },
+    required: ['archivePath', 'outputPath'],
     additionalProperties: false
   };
 
-
   protected validateArgs(args: Record<string, any>): void {
-
-
-    // No required fields to validate
-
-
+    this.assertString(args.archivePath, 'archivePath');
+    this.assertString(args.outputPath, 'outputPath');
+    if (args.filter !== undefined) {
+      this.assertString(args.filter, 'filter');
+    }
+    if (args.overwrite !== undefined) {
+      this.assertBoolean(args.overwrite, 'overwrite');
+    }
   }
 
 
   protected async executeCommand(context: CommandContext): Promise<CommandResult> {
     try {
-      const compressionService = context.container.getService<CompressionService>('compressionService');
+      const compressionService = context.container.getService<ICompressionService>('compressionService');
       const result = await compressionService.extract(
         context.args.archivePath,
         context.args.outputPath,

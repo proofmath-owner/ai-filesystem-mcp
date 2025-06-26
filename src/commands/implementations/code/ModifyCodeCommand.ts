@@ -1,44 +1,71 @@
 import { BaseCommand } from '../../base/BaseCommand.js';
 import { CommandResult, CommandContext } from '../../../core/interfaces/ICommand.js';
-import { CodeAnalysisService } from '../../../core/services/code/CodeAnalysisService.js';
-
-const ModificationSchema = {
-    type: 'object',
-    properties: {
-      // TODO: Add properties from Zod schema
-    }
-  };
-
-const ModifyCodeArgsSchema = {
-    type: 'object',
-    properties: {
-      // TODO: Add properties from Zod schema
-    }
-  };
-
+import { ICodeAnalysisService } from '../../../core/interfaces/ICodeAnalysisService.js';
 
 export class ModifyCodeCommand extends BaseCommand {
   readonly name = 'modify_code';
   readonly description = 'Modify code using AST transformations';
   readonly inputSchema = {
     type: 'object',
-    properties: {},
+    properties: {
+      path: { 
+        type: 'string', 
+        description: 'Path to the code file to modify' 
+      },
+      modifications: { 
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            type: { 
+              type: 'string',
+              enum: ['rename', 'addImport', 'removeImport', 'addFunction', 'updateFunction', 'addProperty'],
+              description: 'Type of modification'
+            },
+            target: { type: 'string', description: 'Target element name' },
+            newName: { type: 'string', description: 'New name for rename operations' },
+            importName: { type: 'string', description: 'Import name for import operations' },
+            importPath: { type: 'string', description: 'Import path for import operations' },
+            functionCode: { type: 'string', description: 'Function code for function operations' },
+            propertyName: { type: 'string', description: 'Property name for property operations' },
+            propertyValue: { type: 'string', description: 'Property value for property operations' }
+          },
+          required: ['type']
+        },
+        description: 'Array of modifications to apply'
+      }
+    },
+    required: ['path', 'modifications'],
     additionalProperties: false
   };
 
-
   protected validateArgs(args: Record<string, any>): void {
-
-
-    // No required fields to validate
-
-
+    this.assertString(args.path, 'path');
+    this.assertArray(args.modifications, 'modifications');
+    
+    if (args.modifications.length === 0) {
+      throw new Error('At least one modification is required');
+    }
+    
+    // Validate each modification
+    args.modifications.forEach((mod: any, index: number) => {
+      if (typeof mod !== 'object') {
+        throw new Error(`Modification ${index} must be an object`);
+      }
+      if (!mod.type) {
+        throw new Error(`Modification ${index} must have a type`);
+      }
+      const validTypes = ['rename', 'addImport', 'removeImport', 'addFunction', 'updateFunction', 'addProperty'];
+      if (!validTypes.includes(mod.type)) {
+        throw new Error(`Modification ${index} type must be one of: ${validTypes.join(', ')}`);
+      }
+    });
   }
 
 
   protected async executeCommand(context: CommandContext): Promise<CommandResult> {
     try {
-      const codeService = context.container.getService<CodeAnalysisService>('codeAnalysisService');
+      const codeService = context.container.getService<ICodeAnalysisService>('codeAnalysisService');
       const result = await codeService.modifyCode(context.args.path, context.args.modifications);
 
       return {

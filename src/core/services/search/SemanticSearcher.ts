@@ -1,9 +1,6 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { glob } from 'glob';
-import { promisify } from 'util';
-
-const globAsync = promisify(glob);
 // Natural language processing would require additional libraries
 // For now, we'll implement a simple keyword-based semantic search
 
@@ -31,15 +28,26 @@ export class SemanticSearcher {
     query: string
   ): Promise<SemanticSearchResult[]> {
     const results: SemanticSearchResult[] = [];
+    const startTime = Date.now();
+    const MAX_DURATION = 15000; // 15 seconds timeout
+    const MAX_ITEMS = 500; // Maximum items to process
     const queryKeywords = this.extractKeywords(query.toLowerCase());
     
     // Get all files and directories
-    const items = await globAsync(path.join(directory, '**/*'), {
+    const items = await glob(path.join(directory, '**/*'), {
       mark: true,
-      ignore: ['**/node_modules/**', '**/.git/**']
+      ignore: ['**/node_modules/**', '**/.git/**', '**/dist/**']
     });
 
-    for (const item of items as string[]) {
+    const itemsToProcess = items.slice(0, MAX_ITEMS);
+
+    for (const item of itemsToProcess) {
+      // Check timeout
+      if (Date.now() - startTime > MAX_DURATION) {
+        console.warn(`Semantic search timeout reached after ${MAX_DURATION}ms - returning partial results`);
+        break;
+      }
+      
       const isDirectory = item.endsWith('/');
       const itemPath = isDirectory ? item.slice(0, -1) : item;
       const basename = path.basename(itemPath).toLowerCase();
@@ -62,7 +70,7 @@ export class SemanticSearcher {
       }
     }
 
-    // Sort by score (highest first)
+    // Sort by score (highest first) and limit results
     return results.sort((a, b) => b.score - a.score).slice(0, 50);
   }
 

@@ -1,9 +1,6 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { glob } from 'glob';
-import { promisify } from 'util';
-
-const globAsync = promisify(glob);
 
 export interface SearchResult {
   path: string;
@@ -31,20 +28,40 @@ export class ContentSearcher {
           options?.ignoreCase ? 'gi' : 'g'
         );
 
-    // Get files to search
+    // Get files to search with timeout protection
     const globPattern = path.join(directory, options?.filePattern || '**/*');
-    const files = await globAsync(globPattern, {
+    const startTime = Date.now();
+    const MAX_DURATION = 10000; // 10 seconds timeout
+    const MAX_FILES = 1000; // Maximum files to process
+    
+    const files = await glob(globPattern, {
       nodir: true,
       ignore: ['**/node_modules/**', '**/.git/**', '**/dist/**']
     });
 
-    // Search each file
-    for (const file of files as string[]) {
+    // Search each file with limits and timeout
+    const filesToProcess = files.slice(0, MAX_FILES);
+    
+    for (const file of filesToProcess) {
+      // Check timeout
+      if (Date.now() - startTime > MAX_DURATION) {
+        console.warn(`Content search timeout reached after ${MAX_DURATION}ms - returning partial results`);
+        break;
+      }
+      
       try {
+        const stats = await fs.stat(file);
+        // Skip large files (>1MB)
+        if (stats.size > 1024 * 1024) {
+          continue;
+        }
+        
         const content = await fs.readFile(file, 'utf-8');
         const lines = content.split('\n');
 
         lines.forEach((line, lineIndex) => {
+          // Reset regex lastIndex to prevent missed matches
+          searchRegex.lastIndex = 0;
           let match;
           while ((match = searchRegex.exec(line)) !== null) {
             results.push({
@@ -54,6 +71,11 @@ export class ContentSearcher {
               match: match[0],
               context: this.getContext(lines, lineIndex)
             });
+            
+            // Prevent infinite loop on zero-width matches
+            if (match.index === searchRegex.lastIndex) {
+              searchRegex.lastIndex++;
+            }
           }
         });
       } catch (error) {

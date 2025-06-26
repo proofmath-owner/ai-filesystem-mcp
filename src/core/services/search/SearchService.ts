@@ -156,7 +156,7 @@ export class SearchService implements ISearchService {
     const results = await this.fuzzySearcher.fuzzySearch(
       directory,
       query,
-      options?.threshold
+      options?.threshold || 0.6
     );
     
     // Filter by extensions if specified

@@ -1,37 +1,42 @@
 import { BaseCommand } from '../../base/BaseCommand.js';
 import { CommandResult, CommandContext } from '../../../core/interfaces/ICommand.js';
-import { SecurityService } from '../../../core/services/security/SecurityService.js';
-
-const DecryptFileArgsSchema = {
-    type: 'object',
-    properties: {
-      // TODO: Add properties from Zod schema
-    }
-  };
-
+import { ISecurityService } from '../../../core/interfaces/ISecurityService.js';
 
 export class DecryptFileCommand extends BaseCommand {
   readonly name = 'decrypt_file';
   readonly description = 'Decrypt an encrypted file with a password';
   readonly inputSchema = {
     type: 'object',
-    properties: {},
+    properties: {
+      path: { 
+        type: 'string', 
+        description: 'Path to the encrypted file' 
+      },
+      password: { 
+        type: 'string', 
+        description: 'Decryption password' 
+      },
+      outputPath: { 
+        type: 'string', 
+        description: 'Output path for decrypted file (optional)' 
+      }
+    },
+    required: ['path', 'password'],
     additionalProperties: false
   };
 
-
   protected validateArgs(args: Record<string, any>): void {
-
-
-    // No required fields to validate
-
-
+    this.assertString(args.path, 'path');
+    this.assertString(args.password, 'password');
+    if (args.outputPath !== undefined) {
+      this.assertString(args.outputPath, 'outputPath');
+    }
   }
 
 
   protected async executeCommand(context: CommandContext): Promise<CommandResult> {
     try {
-      const securityService = context.container.getService<SecurityService>('securityService');
+      const securityService = context.container.getService<ISecurityService>('securityService');
       const result = await securityService.decryptFile(
         context.args.path,
         context.args.password,

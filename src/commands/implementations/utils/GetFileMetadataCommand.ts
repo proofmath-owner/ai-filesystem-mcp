@@ -1,38 +1,42 @@
 import { BaseCommand } from '../../base/BaseCommand.js';
 import { CommandResult, CommandContext } from '../../../core/interfaces/ICommand.js';
-import { FileService } from '../../../core/services/file/FileService.js';
-
-const GetFileMetadataArgsSchema = {
-    type: 'object',
-    properties: {
-      // TODO: Add properties from Zod schema
-    }
-  };
-
+import { IFileService } from '../../../core/services/interfaces/IFileService.js';
 
 export class GetFileMetadataCommand extends BaseCommand {
   readonly name = 'get_file_metadata';
   readonly description = 'Get detailed metadata about a file or directory';
   readonly inputSchema = {
     type: 'object',
-    properties: {},
+    properties: {
+      path: { 
+        type: 'string', 
+        description: 'Path to the file or directory' 
+      },
+      includeHidden: { 
+        type: 'boolean', 
+        description: 'Include hidden file information',
+        default: false 
+      }
+    },
+    required: ['path'],
     additionalProperties: false
   };
 
-
   protected validateArgs(args: Record<string, any>): void {
-
-
-    // No required fields to validate
-
-
+    this.assertString(args.path, 'path');
+    if (args.includeHidden !== undefined) {
+      this.assertBoolean(args.includeHidden, 'includeHidden');
+    }
   }
 
 
   protected async executeCommand(context: CommandContext): Promise<CommandResult> {
     try {
-      const fileService = context.container.getService<FileService>('fileService');
-      const metadata = await fileService.getMetadata(context.args.path);
+      const fileService = context.container.getService<IFileService>('fileService');
+      const result = await fileService.getFileMetadata(context.args.path);
+      
+      // Parse the JSON response from the service
+      const metadata = JSON.parse(result.content[0].text);
 
       return {
         content: [{

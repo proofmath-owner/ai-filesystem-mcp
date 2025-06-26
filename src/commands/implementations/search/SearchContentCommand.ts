@@ -30,8 +30,8 @@ export class SearchContentCommand extends BaseCommand {
   protected async executeCommand(context: CommandContext): Promise<CommandResult> {
     const searchService = context.container.getService<ISearchService>('searchService');
     const results = await searchService.searchContent(
-      context.args.pattern,
       context.args.directory,
+      context.args.pattern,
       context.args.filePattern
     );
 

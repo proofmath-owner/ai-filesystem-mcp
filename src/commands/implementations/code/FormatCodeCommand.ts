@@ -5,8 +5,27 @@ import { CodeAnalysisService } from '../../../core/services/code/CodeAnalysisSer
 const FormatCodeArgsSchema = {
     type: 'object',
     properties: {
-      // TODO: Add properties from Zod schema
-    }
+      path: {
+        type: 'string',
+        description: 'Path to the file to format'
+      },
+      style: {
+        type: 'string',
+        description: 'Code style guide to use (e.g., prettier, eslint)',
+        default: 'prettier'
+      },
+      config: {
+        type: 'object',
+        description: 'Configuration options for the formatter',
+        additionalProperties: true
+      },
+      fix: {
+        type: 'boolean',
+        description: 'Whether to fix issues automatically',
+        default: true
+      }
+    },
+    required: ['path']
   };
 
 
@@ -15,17 +34,48 @@ export class FormatCodeCommand extends BaseCommand {
   readonly description = 'Format code using specified style guide';
   readonly inputSchema = {
     type: 'object',
-    properties: {},
+    properties: {
+      path: {
+        type: 'string',
+        description: 'Path to the file to format'
+      },
+      style: {
+        type: 'string',
+        description: 'Code style guide to use (e.g., prettier, eslint)',
+        default: 'prettier'
+      },
+      config: {
+        type: 'object',
+        description: 'Configuration options for the formatter',
+        additionalProperties: true
+      },
+      fix: {
+        type: 'boolean',
+        description: 'Whether to fix issues automatically',
+        default: true
+      }
+    },
+    required: ['path'],
     additionalProperties: false
   };
 
 
   protected validateArgs(args: Record<string, any>): void {
-
-
-    // No required fields to validate
-
-
+    if (!args.path || typeof args.path !== 'string') {
+      throw new Error('path is required and must be a string');
+    }
+    
+    if (args.style && typeof args.style !== 'string') {
+      throw new Error('style must be a string');
+    }
+    
+    if (args.config && typeof args.config !== 'object') {
+      throw new Error('config must be an object');
+    }
+    
+    if (args.fix !== undefined && typeof args.fix !== 'boolean') {
+      throw new Error('fix must be a boolean');
+    }
   }
 
 

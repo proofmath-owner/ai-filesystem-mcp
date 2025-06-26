@@ -1,9 +1,6 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { glob } from 'glob';
-import { promisify } from 'util';
-
-const globAsync = promisify(glob);
 
 export interface FuzzySearchResult {
   path: string;
@@ -18,14 +15,25 @@ export class FuzzySearcher {
     threshold: number = 0.6
   ): Promise<FuzzySearchResult[]> {
     const results: FuzzySearchResult[] = [];
+    const startTime = Date.now();
+    const MAX_DURATION = 5000; // 5 seconds timeout
+    const MAX_ITEMS = 1000; // Maximum items to process
     
     // Get all files and directories
-    const items = await globAsync(path.join(directory, '**/*'), {
+    const items = await glob(path.join(directory, '**/*'), {
       mark: true,
-      ignore: ['**/node_modules/**', '**/.git/**']
+      ignore: ['**/node_modules/**', '**/.git/**', '**/dist/**']
     });
 
-    for (const item of items as string[]) {
+    const itemsToProcess = items.slice(0, MAX_ITEMS);
+    
+    for (const item of itemsToProcess) {
+      // Check timeout
+      if (Date.now() - startTime > MAX_DURATION) {
+        console.warn(`Fuzzy search timeout reached after ${MAX_DURATION}ms - returning partial results`);
+        break;
+      }
+      
       const isDirectory = item.endsWith('/');
       const itemPath = isDirectory ? item.slice(0, -1) : item;
       const basename = path.basename(itemPath);
@@ -40,8 +48,8 @@ export class FuzzySearcher {
       }
     }
 
-    // Sort by score (highest first)
-    return results.sort((a, b) => b.score - a.score);
+    // Sort by score (highest first) and limit results
+    return results.sort((a, b) => b.score - a.score).slice(0, 50);
   }
 
   private calculateSimilarity(str1: string, str2: string): number {

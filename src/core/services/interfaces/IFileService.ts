@@ -35,4 +35,7 @@ export interface IFileService {
   compareFiles(file1: string, file2: string): Promise<CommandResult>;
   findDuplicateFiles(directory: string): Promise<CommandResult>;
   diffFiles(file1: string, file2: string): Promise<CommandResult>;
+  
+  // Permission operations
+  changePermissions(path: string, permissions: string, recursive?: boolean): Promise<CommandResult>;
 }

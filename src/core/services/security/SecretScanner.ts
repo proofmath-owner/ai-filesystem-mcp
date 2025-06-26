@@ -1,9 +1,6 @@
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { glob } from 'glob';
-import { promisify } from 'util';
-
-const globAsync = promisify(glob);
 
 export interface SecretMatch {
   path: string;
@@ -96,7 +93,7 @@ export class SecretScanner {
     
     try {
       // Get all files
-      const files = await globAsync(path.join(directory, '**/*'), {
+      const files = await glob(path.join(directory, '**/*'), {
         nodir: true,
         ignore: [
           '**/node_modules/**',

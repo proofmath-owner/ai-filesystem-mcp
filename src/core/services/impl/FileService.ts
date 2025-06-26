@@ -316,4 +316,92 @@ export class FileService implements IFileService {
       return this.handleError(error, 'diff', `${file1} vs ${file2}`);
     }
   }
+
+  async changePermissions(filePath: string, permissions: string, recursive: boolean = false): Promise<CommandResult> {
+    const startTime = Date.now();
+    
+    try {
+      const absolutePath = path.resolve(filePath);
+      
+      // Convert permissions to octal mode
+      let mode: number;
+      if (/^[0-7]{3,4}$/.test(permissions)) {
+        // Octal format
+        mode = parseInt(permissions, 8);
+      } else if (/^[rwx-]{9}$/.test(permissions)) {
+        // Symbolic format - convert to octal
+        mode = this.parseSymbolicPermissions(permissions);
+      } else {
+        throw new Error('Invalid permissions format. Use octal (e.g., "755") or symbolic (e.g., "rwxr-xr-x")');
+      }
+      
+      if (recursive) {
+        await this.changePermissionsRecursive(absolutePath, mode);
+      } else {
+        await fs.chmod(absolutePath, mode);
+      }
+      
+      await this.monitoringManager.logOperation({
+        type: 'chmod',
+        path: absolutePath,
+        success: true,
+        metadata: { duration: Date.now() - startTime, permissions }
+      });
+      
+      return {
+        content: [{ type: 'text', text: `Permissions changed successfully: ${absolutePath} (${permissions}, recursive: ${recursive})` }]
+      };
+    } catch (error) {
+      await this.monitoringManager.logOperation({
+        type: 'chmod',
+        path: filePath,
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        metadata: { duration: Date.now() - startTime }
+      });
+      
+      return this.handleError(error, 'chmod', filePath);
+    }
+  }
+
+  private parseSymbolicPermissions(symbolic: string): number {
+    let mode = 0;
+    
+    // Owner permissions (first 3 chars)
+    if (symbolic[0] === 'r') mode += 0o400;
+    if (symbolic[1] === 'w') mode += 0o200;
+    if (symbolic[2] === 'x') mode += 0o100;
+    
+    // Group permissions (next 3 chars)
+    if (symbolic[3] === 'r') mode += 0o040;
+    if (symbolic[4] === 'w') mode += 0o020;
+    if (symbolic[5] === 'x') mode += 0o010;
+    
+    // Other permissions (last 3 chars)
+    if (symbolic[6] === 'r') mode += 0o004;
+    if (symbolic[7] === 'w') mode += 0o002;
+    if (symbolic[8] === 'x') mode += 0o001;
+    
+    return mode;
+  }
+
+  private async changePermissionsRecursive(dirPath: string, mode: number): Promise<void> {
+    const stats = await fs.stat(dirPath);
+    
+    if (stats.isDirectory()) {
+      // Change directory permissions
+      await fs.chmod(dirPath, mode);
+      
+      // Process directory contents
+      const entries = await fs.readdir(dirPath);
+      await Promise.all(
+        entries.map(entry => 
+          this.changePermissionsRecursive(path.join(dirPath, entry), mode)
+        )
+      );
+    } else {
+      // Change file permissions
+      await fs.chmod(dirPath, mode);
+    }
+  }
 }
