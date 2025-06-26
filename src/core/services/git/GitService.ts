@@ -101,60 +101,61 @@ export class GitService implements IGitService {
     return { message: `Initialized ${bare ? 'bare ' : ''}Git repository in ${path}` };
   }
 
-  async gitAdd(files: string[]): Promise<{ message: string }> {
-    await this.add(files);
-    return { message: `Added ${files.length} file(s) to staging area` };
+  async gitAdd(files: string | string[], path?: string): Promise<{ message: string }> {
+    await this.add(files, path);
+    const fileCount = Array.isArray(files) ? files.length : 1;
+    return { message: `Added ${fileCount} file(s) to staging area` };
   }
 
-  async gitAddAll(): Promise<{ message: string }> {
-    await this.add('.');
+  async gitAddAll(path?: string): Promise<{ message: string }> {
+    await this.add('.', path);
     return { message: 'Added all changes to staging area' };
   }
 
-  async gitCommit(message: string, files?: string[]): Promise<{ message: string }> {
-    await this.commit(message, files);
+  async gitCommit(message: string, files?: string[], path?: string): Promise<{ message: string }> {
+    await this.commit(message, files, path);
     return { message: 'Changes committed successfully' };
   }
 
-  async gitPush(remote: string, branch?: string, force?: boolean, setUpstream?: boolean): Promise<{ message: string }> {
-    await this.push({ remote, branch, force });
+  async gitPush(remote: string, branch?: string, force?: boolean, setUpstream?: boolean, path?: string): Promise<{ message: string }> {
+    await this.push({ remote, branch, force }, path);
     return { message: `Pushed to ${remote}${branch ? '/' + branch : ''}` };
   }
 
-  async gitPull(remote: string, branch?: string, rebase?: boolean): Promise<{ message: string }> {
-    await this.pull({ remote, branch });
+  async gitPull(remote: string, branch?: string, rebase?: boolean, path?: string): Promise<{ message: string }> {
+    await this.pull({ remote, branch }, path);
     return { message: `Pulled from ${remote}${branch ? '/' + branch : ''}` };
   }
 
-  async gitBranchList(all: boolean, remote: boolean): Promise<string[]> {
-    return this.gitOps.getBranches(all);
+  async gitBranchList(all: boolean, remote: boolean, path?: string): Promise<string[]> {
+    return this.gitOps.getBranches(all, path);
   }
 
-  async gitBranchCreate(name: string): Promise<{ message: string }> {
-    await this.branch('create', name);
+  async gitBranchCreate(name: string, path?: string): Promise<{ message: string }> {
+    await this.branch('create', name, { path });
     return { message: `Created branch '${name}'` };
   }
 
-  async gitBranchDelete(name: string, force: boolean): Promise<{ message: string }> {
-    await this.branch('delete', name, { force });
+  async gitBranchDelete(name: string, force: boolean, path?: string): Promise<{ message: string }> {
+    await this.branch('delete', name, { force, path });
     return { message: `Deleted branch '${name}'` };
   }
 
-  async gitBranchRename(oldName: string, newName: string): Promise<{ message: string }> {
+  async gitBranchRename(oldName: string, newName: string, path?: string): Promise<{ message: string }> {
     // This would need implementation in GitOperations
     throw new Error('Branch rename not yet implemented');
   }
 
-  async gitCheckout(branch: string, create: boolean, force: boolean): Promise<{ message: string }> {
+  async gitCheckout(branch: string, create: boolean, force: boolean, path?: string): Promise<{ message: string }> {
     if (create) {
-      await this.branch('create', branch);
+      await this.branch('create', branch, { path });
     }
-    await this.branch('checkout', branch);
+    await this.branch('checkout', branch, { path });
     return { message: `Switched to branch '${branch}'` };
   }
 
   async gitLog(options: any): Promise<GitCommit[]> {
-    return this.log(options.limit);
+    return this.log(options.limit, options.path);
   }
 
   async gitClone(url: string, directory?: string, branch?: string, depth?: number, bare?: boolean): Promise<{ message: string }> {

@@ -15,17 +15,49 @@ export class CompressFilesCommand extends BaseCommand {
   readonly description = 'Compress files or directories into an archive';
   readonly inputSchema = {
     type: 'object',
-    properties: {},
+    properties: {
+      files: { 
+        type: 'array', 
+        items: { type: 'string' },
+        description: 'Array of file/directory paths to compress' 
+      },
+      outputPath: { type: 'string', description: 'Output path for the archive' },
+      format: { 
+        type: 'string', 
+        description: 'Compression format',
+        enum: ['zip', 'tar', 'tar.gz', 'tar.bz2'],
+        default: 'zip'
+      },
+      compressionLevel: { 
+        type: 'number', 
+        description: 'Compression level (1-9)',
+        minimum: 1,
+        maximum: 9,
+        default: 6
+      },
+      includeHidden: { 
+        type: 'boolean', 
+        description: 'Include hidden files',
+        default: false
+      }
+    },
+    required: ['files', 'outputPath'],
     additionalProperties: false
   };
 
 
   protected validateArgs(args: Record<string, any>): void {
-
-
-    // No required fields to validate
-
-
+    this.assertArray(args.files, 'files');
+    this.assertString(args.outputPath, 'outputPath');
+    if (args.format) {
+      this.assertString(args.format, 'format');
+    }
+    if (args.compressionLevel !== undefined) {
+      this.assertNumber(args.compressionLevel, 'compressionLevel');
+    }
+    if (args.includeHidden !== undefined) {
+      this.assertBoolean(args.includeHidden, 'includeHidden');
+    }
   }
 
 

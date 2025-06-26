@@ -5,7 +5,39 @@ import { GitService } from '../../../core/services/git/GitService.js';
 const GitBranchArgsSchema = {
     type: 'object',
     properties: {
-      // TODO: Add properties from Zod schema
+      action: {
+        type: 'string',
+        enum: ['list', 'create', 'delete', 'rename'],
+        default: 'list',
+        description: 'Branch action to perform'
+      },
+      name: {
+        type: 'string',
+        description: 'Branch name (for create/delete/rename)'
+      },
+      newName: {
+        type: 'string',
+        description: 'New branch name (for rename)'
+      },
+      all: {
+        type: 'boolean',
+        default: false,
+        description: 'Show all branches including remotes'
+      },
+      remote: {
+        type: 'boolean',
+        default: false,
+        description: 'Show remote branches only'
+      },
+      force: {
+        type: 'boolean',
+        default: false,
+        description: 'Force delete'
+      },
+      path: {
+        type: 'string',
+        description: 'Repository path (optional, defaults to current directory)'
+      }
     }
   };
 
@@ -13,19 +45,31 @@ const GitBranchArgsSchema = {
 export class GitBranchCommand extends BaseCommand {
   readonly name = 'git_branch';
   readonly description = 'List, create, or delete branches';
-  readonly inputSchema = {
-    type: 'object',
-    properties: {},
-    additionalProperties: false
-  };
+  readonly inputSchema = GitBranchArgsSchema;
 
 
   protected validateArgs(args: Record<string, any>): void {
-
-
-    // No required fields to validate
-
-
+    if (args.action && !['list', 'create', 'delete', 'rename'].includes(args.action)) {
+      throw new Error('action must be one of: list, create, delete, rename');
+    }
+    if (args.name !== undefined) {
+      this.assertString(args.name, 'name');
+    }
+    if (args.newName !== undefined) {
+      this.assertString(args.newName, 'newName');
+    }
+    if (args.all !== undefined) {
+      this.assertBoolean(args.all, 'all');
+    }
+    if (args.remote !== undefined) {
+      this.assertBoolean(args.remote, 'remote');
+    }
+    if (args.force !== undefined) {
+      this.assertBoolean(args.force, 'force');
+    }
+    if (args.path !== undefined) {
+      this.assertString(args.path, 'path');
+    }
   }
 
 
@@ -34,30 +78,32 @@ export class GitBranchCommand extends BaseCommand {
       const gitService = context.container.getService<GitService>('gitService');
       let result;
 
-      switch (context.args.action) {
+      const { action = 'list', name, newName, all = false, remote = false, force = false, path } = context.args;
+      
+      switch (action) {
         case 'list':
-          result = await gitService.gitBranchList(context.args.all, context.args.remote);
+          result = await gitService.gitBranchList(all, remote, path);
           break;
         case 'create':
-          if (!context.args.name) {
+          if (!name) {
             throw new Error('Branch name is required for create action');
           }
-          result = await gitService.gitBranchCreate(context.args.name);
+          result = await gitService.gitBranchCreate(name, path);
           break;
         case 'delete':
-          if (!context.args.name) {
+          if (!name) {
             throw new Error('Branch name is required for delete action');
           }
-          result = await gitService.gitBranchDelete(context.args.name, context.args.force);
+          result = await gitService.gitBranchDelete(name, force, path);
           break;
         case 'rename':
-          if (!context.args.name || !context.args.newName) {
+          if (!name || !newName) {
             throw new Error('Both name and newName are required for rename action');
           }
-          result = await gitService.gitBranchRename(context.args.name, context.args.newName);
+          result = await gitService.gitBranchRename(name, newName, path);
           break;
         default:
-          throw new Error(`Unknown action: ${context.args.action}`);
+          throw new Error(`Unknown action: ${action}`);
       }
 
       return {

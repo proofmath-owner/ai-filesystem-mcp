@@ -3,18 +3,30 @@ import type { Config } from 'jest';
 const config: Config = {
   preset: 'ts-jest',
   testEnvironment: 'node',
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
   roots: ['<rootDir>/src'],
   testMatch: [
-    '**/src/tests/unit/**/*.test.ts'
+    '**/src/tests/unit/**/*.test.ts',
+    '**/src/tests/integration/**/*.test.ts'
   ],
   testPathIgnorePatterns: [
     '<rootDir>/tests/',
-    '<rootDir>/src/tests/commands/',
-    '<rootDir>/src/tests/integration/',
-    '<rootDir>/src/tests/FileSystemManager.test.ts'
+    '<rootDir>/node_modules/',
+    '<rootDir>/dist/',
+    '<rootDir>/coverage/'
   ],
   transform: {
-    '^.+\\.ts$': 'ts-jest',
+    '^.+\\.ts$': ['ts-jest', {
+      isolatedModules: true,
+      tsconfig: {
+        target: 'ES2020',
+        module: 'CommonJS',
+        moduleResolution: 'node',
+        allowSyntheticDefaultImports: true,
+        esModuleInterop: true,
+        strict: false
+      }
+    }]
   },
   collectCoverageFrom: [
     'src/**/*.ts',
@@ -24,25 +36,25 @@ const config: Config = {
     '!src/types/**',
     '!src/tests/**',
     '!src/legacy/**',
-    '!src/server/**'
+    '!src/server/**',
+    '!src/index.ts',
+    '!src/index-new.ts'
   ],
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'html', 'lcov'],
   coverageThreshold: {
     global: {
-      branches: 80,
-      functions: 80,
-      lines: 80,
-      statements: 80
+      branches: 90,
+      functions: 90,
+      lines: 90,
+      statements: 90
     }
   },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1'
   },
   setupFilesAfterEnv: ['<rootDir>/src/tests/setup.ts'],
-  globals: {
-    'ts-jest': {
-      isolatedModules: true
-    }
-  }
+  verbose: true,
+  clearMocks: true,
+  collectCoverage: true
 };

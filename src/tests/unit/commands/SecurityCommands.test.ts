@@ -8,7 +8,6 @@ import * as fs from 'fs/promises';
 
 // Mock file system
 jest.mock('fs/promises');
-const mockedFs = fs as jest.Mocked<typeof fs>;
 
 describe('Security Commands', () => {
   let container: ServiceContainer;

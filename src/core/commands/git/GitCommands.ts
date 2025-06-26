@@ -11,15 +11,28 @@ export class GitStatusCommand extends Command {
   readonly description = 'Get git repository status';
   readonly inputSchema: Tool['inputSchema'] = {
     type: 'object',
-    properties: {}
+    properties: {
+      path: { type: 'string', description: 'Repository path (optional, defaults to current directory)' }
+    }
   };
 
   protected validateArgs(args: Record<string, any>): void {
-    // git_status는 매개변수가 없음
+    if (args.path !== undefined) {
+      this.assertString(args.path, 'path');
+    }
   }
 
   protected async executeCommand(context: CommandContext): Promise<CommandResult> {
-    return await context.fsManager.gitStatus();
+    const { path } = context.args;
+    const git = new GitIntegration(path);
+    const status = await git.status();
+    
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify(status, null, 2)
+      }]
+    };
   }
 }
 
@@ -41,7 +54,8 @@ export class GitCommitCommand extends Command {
         type: 'array',
         items: { type: 'string' },
         description: 'Specific files to commit (optional)'
-      }
+      },
+      path: { type: 'string', description: 'Repository path (optional, defaults to current directory)' }
     },
     required: ['message']
   };
@@ -53,11 +67,22 @@ export class GitCommitCommand extends Command {
     if (args.files !== undefined && !Array.isArray(args.files)) {
       throw new Error('files must be an array of strings');
     }
+    if (args.path !== undefined) {
+      this.assertString(args.path, 'path');
+    }
   }
 
   protected async executeCommand(context: CommandContext): Promise<CommandResult> {
-    const { message, files } = context.args;
-    return await context.fsManager.gitCommit(message, files);
+    const { message, files, path } = context.args;
+    const git = new GitIntegration(path);
+    const result = await git.commit(message, files);
+    
+    return {
+      content: [{
+        type: 'text',
+        text: result.success ? 'Changes committed successfully' : `Commit failed: ${result.error}`
+      }]
+    };
   }
 }
 
@@ -165,7 +190,8 @@ export class GitPushCommand extends Command {
     properties: {
       remote: { type: 'string', default: 'origin', description: 'Remote name' },
       branch: { type: 'string', description: 'Branch name (optional, uses current)' },
-      force: { type: 'boolean', default: false, description: 'Force push' }
+      force: { type: 'boolean', default: false, description: 'Force push' },
+      path: { type: 'string', description: 'Repository path (optional, defaults to current directory)' }
     }
   };
 
@@ -179,11 +205,14 @@ export class GitPushCommand extends Command {
     if (args.force !== undefined) {
       this.assertBoolean(args.force, 'force');
     }
+    if (args.path !== undefined) {
+      this.assertString(args.path, 'path');
+    }
   }
 
   protected async executeCommand(context: CommandContext): Promise<CommandResult> {
-    const { remote = 'origin', branch, force = false } = context.args;
-    const git = new GitIntegration();
+    const { remote = 'origin', branch, force = false, path } = context.args;
+    const git = new GitIntegration(path);
     
     await git.push(remote, branch, force);
     
@@ -207,7 +236,8 @@ export class GitPullCommand extends Command {
     type: 'object',
     properties: {
       remote: { type: 'string', default: 'origin', description: 'Remote name' },
-      branch: { type: 'string', description: 'Branch name (optional)' }
+      branch: { type: 'string', description: 'Branch name (optional)' },
+      path: { type: 'string', description: 'Repository path (optional, defaults to current directory)' }
     }
   };
 
@@ -218,11 +248,14 @@ export class GitPullCommand extends Command {
     if (args.branch !== undefined) {
       this.assertString(args.branch, 'branch');
     }
+    if (args.path !== undefined) {
+      this.assertString(args.path, 'path');
+    }
   }
 
   protected async executeCommand(context: CommandContext): Promise<CommandResult> {
-    const { remote = 'origin', branch } = context.args;
-    const git = new GitIntegration();
+    const { remote = 'origin', branch, path } = context.args;
+    const git = new GitIntegration(path);
     
     await git.pull(remote, branch);
     
@@ -253,7 +286,8 @@ export class GitBranchCommand extends Command {
       },
       name: { type: 'string', description: 'Branch name (for create/delete/checkout)' },
       all: { type: 'boolean', default: false, description: 'Show all branches including remotes' },
-      force: { type: 'boolean', default: false, description: 'Force delete' }
+      force: { type: 'boolean', default: false, description: 'Force delete' },
+      path: { type: 'string', description: 'Repository path (optional, defaults to current directory)' }
     }
   };
 
@@ -270,11 +304,14 @@ export class GitBranchCommand extends Command {
     if (args.force !== undefined) {
       this.assertBoolean(args.force, 'force');
     }
+    if (args.path !== undefined) {
+      this.assertString(args.path, 'path');
+    }
   }
 
   protected async executeCommand(context: CommandContext): Promise<CommandResult> {
-    const { action = 'list', name, all = false, force = false } = context.args;
-    const git = new GitIntegration();
+    const { action = 'list', name, all = false, force = false, path } = context.args;
+    const git = new GitIntegration(path);
     
     switch (action) {
       case 'list': {
@@ -340,7 +377,8 @@ export class GitLogCommand extends Command {
   readonly inputSchema: Tool['inputSchema'] = {
     type: 'object',
     properties: {
-      limit: { type: 'number', default: 10, description: 'Number of commits to show' }
+      limit: { type: 'number', default: 10, description: 'Number of commits to show' },
+      path: { type: 'string', description: 'Repository path (optional, defaults to current directory)' }
     }
   };
 
@@ -348,11 +386,14 @@ export class GitLogCommand extends Command {
     if (args.limit !== undefined) {
       this.assertNumber(args.limit, 'limit');
     }
+    if (args.path !== undefined) {
+      this.assertString(args.path, 'path');
+    }
   }
 
   protected async executeCommand(context: CommandContext): Promise<CommandResult> {
-    const { limit = 10 } = context.args;
-    const git = new GitIntegration();
+    const { limit = 10, path } = context.args;
+    const git = new GitIntegration(path);
     
     const logs = await git.log(limit);
     const logText = logs.map((log: GitLogEntry) => 
@@ -380,7 +421,8 @@ export class GitHubCreatePRCommand extends Command {
     properties: {
       title: { type: 'string', description: 'PR title' },
       body: { type: 'string', description: 'PR description' },
-      base: { type: 'string', description: 'Base branch (optional)' }
+      base: { type: 'string', description: 'Base branch (optional)' },
+      path: { type: 'string', description: 'Repository path (optional, defaults to current directory)' }
     },
     required: ['title']
   };
@@ -393,11 +435,14 @@ export class GitHubCreatePRCommand extends Command {
     if (args.base !== undefined) {
       this.assertString(args.base, 'base');
     }
+    if (args.path !== undefined) {
+      this.assertString(args.path, 'path');
+    }
   }
 
   protected async executeCommand(context: CommandContext): Promise<CommandResult> {
-    const { title, body, base } = context.args;
-    const git = new GitIntegration();
+    const { title, body, base, path } = context.args;
+    const git = new GitIntegration(path);
     
     if (!await git.hasGitHubCLI()) {
       throw new Error('GitHub CLI (gh) is not installed. Please install it first: https://cli.github.com');

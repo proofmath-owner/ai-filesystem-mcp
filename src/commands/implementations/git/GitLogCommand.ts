@@ -5,7 +5,15 @@ import { GitService } from '../../../core/services/git/GitService.js';
 const GitLogArgsSchema = {
     type: 'object',
     properties: {
-      // TODO: Add properties from Zod schema
+      limit: {
+        type: 'number',
+        default: 10,
+        description: 'Number of commits to show'
+      },
+      path: {
+        type: 'string',
+        description: 'Repository path (optional, defaults to current directory)'
+      }
     }
   };
 
@@ -13,26 +21,26 @@ const GitLogArgsSchema = {
 export class GitLogCommand extends BaseCommand {
   readonly name = 'git_log';
   readonly description = 'Show commit logs';
-  readonly inputSchema = {
-    type: 'object',
-    properties: {},
-    additionalProperties: false
-  };
+  readonly inputSchema = GitLogArgsSchema;
 
 
   protected validateArgs(args: Record<string, any>): void {
-
-
-    // No required fields to validate
-
-
+    if (args.limit !== undefined) {
+      this.assertNumber(args.limit, 'limit');
+    }
+    if (args.path !== undefined) {
+      this.assertString(args.path, 'path');
+    }
   }
 
 
   protected async executeCommand(context: CommandContext): Promise<CommandResult> {
     try {
       const gitService = context.container.getService<GitService>('gitService');
-      const commits = await gitService.gitLog(context.args);
+      const commits = await gitService.gitLog({
+        limit: context.args.limit || 10,
+        path: context.args.path
+      });
 
       return {
         content: [{

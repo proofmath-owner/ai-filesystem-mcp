@@ -6,22 +6,22 @@ export class GitStatusCommand extends BaseCommand {
   readonly description = 'Get git repository status';
   readonly inputSchema = {
     type: 'object',
-    properties: {}
+    properties: {
+      path: { type: 'string', description: 'Repository path (defaults to current directory)' }
+    }
   };
 
 
   protected validateArgs(args: Record<string, any>): void {
-
-
-    // No validation needed
-
-
+    if (args.path !== undefined) {
+      this.assertString(args.path, 'path');
+    }
   }
 
 
   protected async executeCommand(context: CommandContext): Promise<CommandResult> {
     const gitService = context.container.getService('gitService') as any;
-    const status = await gitService.getStatus();
+    const status = await gitService.status(context.args.path);
     
     return this.formatResult(status);
   }

@@ -9,7 +9,7 @@ export class WriteFileCommand extends BaseCommand {
     type: 'object' as const,
     properties: {
       path: { type: 'string' as const, description: 'File path to write' },
-      data: { type: 'string' as const, description: 'Content to write' }
+      content: { type: 'string' as const, description: 'Content to write' }
     },
     required: ['path', 'content']
   };

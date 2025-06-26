@@ -48,11 +48,13 @@ export class BatchOperationsCommand extends BaseCommand {
 
 
   protected validateArgs(args: Record<string, any>): void {
-
-
-    this.assertString(args.from, 'from');
-
-
+    this.assertArray(args.operations, 'operations');
+    
+    // Validate each operation
+    args.operations.forEach((op: any, index: number) => {
+      this.assertString(op.op, `operations[${index}].op`);
+      this.assertArray(op.files, `operations[${index}].files`);
+    });
   }
 
 

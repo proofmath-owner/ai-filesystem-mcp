@@ -13,6 +13,10 @@ export class GitCommitCommand extends BaseCommand {
         type: 'array' as const, 
         items: { type: 'string' as const },
         description: 'Specific files to commit (optional)' 
+      },
+      path: {
+        type: 'string' as const,
+        description: 'Repository path (optional, defaults to current directory)'
       }
     },
     required: ['message']
@@ -26,12 +30,15 @@ export class GitCommitCommand extends BaseCommand {
         this.assertString(file, `files[${index}]`);
       });
     }
+    if (args.path !== undefined) {
+      this.assertString(args.path, 'path');
+    }
   }
 
   protected async executeCommand(context: CommandContext): Promise<CommandResult> {
     const gitService = context.container.getService<IGitService>('gitService');
     
-    await gitService.commit(context.args.message, context.args.files);
+    await gitService.commit(context.args.message, context.args.files, context.args.path);
     
     return this.formatResult(`Successfully committed changes`);
   }

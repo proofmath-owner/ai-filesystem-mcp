@@ -24,7 +24,10 @@
       "Bash(npm install:*)",
       "Bash(npx jest:*)",
       "Bash(find:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(kill:*)",
+      "Bash(timeout:*)",
+      "Bash(gtimeout:*)"
     ],
     "deny": []
   }

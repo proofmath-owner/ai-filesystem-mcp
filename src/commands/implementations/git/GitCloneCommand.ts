@@ -5,27 +5,52 @@ import { GitService } from '../../../core/services/git/GitService.js';
 const GitCloneArgsSchema = {
     type: 'object',
     properties: {
-      // TODO: Add properties from Zod schema
-    }
+      url: {
+        type: 'string',
+        description: 'Repository URL'
+      },
+      directory: {
+        type: 'string',
+        description: 'Destination directory (optional)'
+      },
+      branch: {
+        type: 'string',
+        description: 'Branch to clone (optional)'
+      },
+      depth: {
+        type: 'number',
+        description: 'Create a shallow clone with history truncated to specified number of commits'
+      },
+      bare: {
+        type: 'boolean',
+        default: false,
+        description: 'Create a bare repository'
+      }
+    },
+    required: ['url']
   };
 
 
 export class GitCloneCommand extends BaseCommand {
   readonly name = 'git_clone';
   readonly description = 'Clone a repository into a new directory';
-  readonly inputSchema = {
-    type: 'object',
-    properties: {},
-    additionalProperties: false
-  };
+  readonly inputSchema = GitCloneArgsSchema;
 
 
   protected validateArgs(args: Record<string, any>): void {
-
-
-    // No required fields to validate
-
-
+    this.assertString(args.url, 'url');
+    if (args.directory !== undefined) {
+      this.assertString(args.directory, 'directory');
+    }
+    if (args.branch !== undefined) {
+      this.assertString(args.branch, 'branch');
+    }
+    if (args.depth !== undefined) {
+      this.assertNumber(args.depth, 'depth');
+    }
+    if (args.bare !== undefined) {
+      this.assertBoolean(args.bare, 'bare');
+    }
   }
 
 

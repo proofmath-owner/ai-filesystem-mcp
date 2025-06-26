@@ -196,17 +196,25 @@ export class AdvancedSearchManager {
     const startTime = Date.now();
     const MAX_DURATION = 10000; // 10초 제한
     
-    // 쿼리 분석
-    const intent = this.analyzeSearchIntent(query);
-    
-    // 인덱싱
-    await this.indexDirectory(directory);
-    
-    // 시간 체크
-    if (Date.now() - startTime > MAX_DURATION) {
-      console.warn('Semantic search timeout during indexing');
-      return [];
-    }
+    try {
+      // 쿼리 분석
+      const intent = this.analyzeSearchIntent(query);
+      
+      // 인덱싱 (타임아웃 포함)
+      const indexPromise = this.indexDirectory(directory);
+      const indexTimeout = new Promise<void>((_, reject) => {
+        setTimeout(() => reject(new Error('Indexing timeout')), 5000);
+      });
+      
+      await Promise.race([indexPromise, indexTimeout]).catch(err => {
+        console.warn('Directory indexing interrupted:', err.message);
+      });
+      
+      // 시간 체크
+      if (Date.now() - startTime > MAX_DURATION || this.documentIndex.size === 0) {
+        console.warn('Semantic search timeout or no files indexed');
+        return [];
+      }
     
     // TF-IDF 기반 검색
     this.tfidf.addDocument(query);
@@ -218,20 +226,25 @@ export class AdvancedSearchManager {
         console.warn('Semantic search timeout - returning partial results');
         break;
       }
-      const scores = this.tfidf.tfidf(query, this.documentIndex.size);
-      const score = scores[Array.from(this.documentIndex.keys()).indexOf(filePath)];
-      
-      if (score > 0) {
-        const stats = await fs.stat(filePath);
-        results.push({
-          path: filePath,
-          score,
-          metadata: {
-            size: stats.size,
-            modified: stats.mtime,
-            created: stats.birthtime || stats.ctime
-          }
-        });
+      try {
+        const scores = this.tfidf.tfidf(query, this.documentIndex.size);
+        const score = scores[Array.from(this.documentIndex.keys()).indexOf(filePath)];
+        
+        if (score > 0) {
+          const stats = await fs.stat(filePath);
+          results.push({
+            path: filePath,
+            score,
+            metadata: {
+              size: stats.size,
+              modified: stats.mtime,
+              created: stats.birthtime || stats.ctime
+            }
+          });
+        }
+      } catch (error) {
+        // TF-IDF 계산 중 오류 발생 시 스킵
+        continue;
       }
     }
     
@@ -247,6 +260,10 @@ export class AdvancedSearchManager {
     results.sort((a, b) => b.score - a.score);
     
     return results.slice(0, 50); // 상위 50개만
+    } catch (error) {
+      console.error('Semantic search error:', error);
+      return [];
+    }
   }
 
   // 검색 의도 분석

@@ -90,24 +90,53 @@ export class SecretScanner {
 
   async scanDirectory(directory: string): Promise<SecretMatch[]> {
     const results: SecretMatch[] = [];
+    const startTime = Date.now();
+    const MAX_DURATION = 10000; // 10초 제한
+    const MAX_FILES = 500; // 최대 파일 수 제한
     
-    // Get all files
-    const files = await globAsync(path.join(directory, '**/*'), {
-      nodir: true,
-      ignore: [
-        '**/node_modules/**',
-        '**/.git/**',
-        '**/dist/**',
-        '**/build/**',
-        '**/*.min.js',
-        '**/*.map'
-      ]
-    });
+    try {
+      // Get all files
+      const files = await globAsync(path.join(directory, '**/*'), {
+        nodir: true,
+        ignore: [
+          '**/node_modules/**',
+          '**/.git/**',
+          '**/dist/**',
+          '**/build/**',
+          '**/*.min.js',
+          '**/*.map',
+          '**/*.lock',
+          '**/coverage/**'
+        ]
+      });
 
-    // Scan each file
-    for (const file of files as string[]) {
-      const fileResults = await this.scanFile(file);
-      results.push(...fileResults);
+      // 파일 수 제한
+      const limitedFiles = (files as string[]).slice(0, MAX_FILES);
+      
+      // Scan each file
+      for (const file of limitedFiles) {
+        // 시간 제한 체크
+        if (Date.now() - startTime > MAX_DURATION) {
+          console.warn(`Secret scan timeout after scanning ${results.length} secrets in ${limitedFiles.indexOf(file)} files`);
+          break;
+        }
+        
+        try {
+          const fileResults = await this.scanFile(file);
+          results.push(...fileResults);
+          
+          // 결과가 너무 많으면 중단
+          if (results.length > 1000) {
+            console.warn('Too many secrets found, stopping scan');
+            break;
+          }
+        } catch (error) {
+          // 개별 파일 오류는 무시하고 계속
+          continue;
+        }
+      }
+    } catch (error) {
+      console.error('Secret scan error:', error);
     }
 
     return results;
@@ -117,11 +146,30 @@ export class SecretScanner {
     const results: SecretMatch[] = [];
     
     try {
+      // 파일 크기 체크
+      const stats = await fs.stat(filePath);
+      if (stats.size > 1024 * 1024) { // 1MB 이상 파일 스킵
+        return results;
+      }
+      
+      // 바이너리 파일 확장자 체크
+      const ext = path.extname(filePath).toLowerCase();
+      const binaryExts = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.ico', '.pdf', '.zip', '.tar', '.gz', '.exe', '.dll', '.so', '.dylib'];
+      if (binaryExts.includes(ext)) {
+        return results;
+      }
+      
       const content = await fs.readFile(filePath, 'utf-8');
       const lines = content.split('\n');
+      
+      // 라인 수 제한
+      const maxLines = Math.min(lines.length, 5000);
 
-      for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+      for (let lineIndex = 0; lineIndex < maxLines; lineIndex++) {
         const line = lines[lineIndex];
+        
+        // 라인 길이 제한 (너무 긴 라인은 스킵)
+        if (line.length > 500) continue;
         
         for (const { name, pattern, severity } of this.patterns) {
           const matches = Array.from(line.matchAll(pattern));
@@ -137,6 +185,11 @@ export class SecretScanner {
               match: this.sanitizeMatch(match[0]),
               severity
             });
+            
+            // 파일당 최대 시크릿 수 제한
+            if (results.length > 50) {
+              return results;
+            }
           }
         }
       }

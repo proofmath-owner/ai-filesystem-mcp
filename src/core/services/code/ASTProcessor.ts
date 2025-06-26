@@ -1,6 +1,7 @@
 import * as parser from '@babel/parser';
 import * as t from '@babel/types';
 import * as fs from 'fs/promises';
+import * as path from 'path';
 
 // Use require for problematic imports
 import traversePkg from '@babel/traverse';
@@ -47,7 +48,8 @@ export interface CodeAnalysis {
 
 export class ASTProcessor {
   async analyzeCode(filePath: string): Promise<CodeAnalysis> {
-    const content = await fs.readFile(filePath, 'utf-8');
+    const absolutePath = path.resolve(filePath);
+    const content = await fs.readFile(absolutePath, 'utf-8');
     const fileExtension = filePath.split('.').pop()?.toLowerCase();
     
     // Determine parser options based on file extension

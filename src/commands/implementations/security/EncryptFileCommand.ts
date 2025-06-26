@@ -15,17 +15,31 @@ export class EncryptFileCommand extends BaseCommand {
   readonly description = 'Encrypt a file with a password';
   readonly inputSchema = {
     type: 'object',
-    properties: {},
+    properties: {
+      path: { type: 'string', description: 'File path to encrypt' },
+      password: { type: 'string', description: 'Password for encryption' },
+      algorithm: { 
+        type: 'string', 
+        description: 'Encryption algorithm', 
+        enum: ['aes-256-gcm', 'aes-256-cbc'],
+        default: 'aes-256-gcm'
+      },
+      outputPath: { type: 'string', description: 'Output path for encrypted file (optional)' }
+    },
+    required: ['path', 'password'],
     additionalProperties: false
   };
 
 
   protected validateArgs(args: Record<string, any>): void {
-
-
-    // No required fields to validate
-
-
+    this.assertString(args.path, 'path');
+    this.assertString(args.password, 'password');
+    if (args.algorithm) {
+      this.assertString(args.algorithm, 'algorithm');
+    }
+    if (args.outputPath) {
+      this.assertString(args.outputPath, 'outputPath');
+    }
   }
 
 

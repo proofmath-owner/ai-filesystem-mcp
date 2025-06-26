@@ -5,27 +5,46 @@ import { GitService } from '../../../core/services/git/GitService.js';
 const GitCheckoutArgsSchema = {
     type: 'object',
     properties: {
-      // TODO: Add properties from Zod schema
-    }
+      branch: {
+        type: 'string',
+        description: 'Branch name to checkout'
+      },
+      create: {
+        type: 'boolean',
+        default: false,
+        description: 'Create a new branch'
+      },
+      force: {
+        type: 'boolean',
+        default: false,
+        description: 'Force checkout (discard local changes)'
+      },
+      path: {
+        type: 'string',
+        description: 'Repository path (optional, defaults to current directory)'
+      }
+    },
+    required: ['branch']
   };
 
 
 export class GitCheckoutCommand extends BaseCommand {
   readonly name = 'git_checkout';
   readonly description = 'Switch branches or restore working tree files';
-  readonly inputSchema = {
-    type: 'object',
-    properties: {},
-    additionalProperties: false
-  };
+  readonly inputSchema = GitCheckoutArgsSchema;
 
 
   protected validateArgs(args: Record<string, any>): void {
-
-
-    // No required fields to validate
-
-
+    this.assertString(args.branch, 'branch');
+    if (args.create !== undefined) {
+      this.assertBoolean(args.create, 'create');
+    }
+    if (args.force !== undefined) {
+      this.assertBoolean(args.force, 'force');
+    }
+    if (args.path !== undefined) {
+      this.assertString(args.path, 'path');
+    }
   }
 
 
@@ -35,7 +54,8 @@ export class GitCheckoutCommand extends BaseCommand {
       const result = await gitService.gitCheckout(
         context.args.branch,
         context.args.create,
-        context.args.force
+        context.args.force,
+        context.args.path
       );
 
       return {

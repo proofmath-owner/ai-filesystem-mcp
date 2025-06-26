@@ -232,22 +232,42 @@ export class FileSystemManager {
     directory: string, 
     filePattern: string = '**/*'
   ): Promise<{ content: [{ type: string; text: string }] }> {
+    const startTime = Date.now();
+    const MAX_DURATION = 5000; // 5초 제한
+    const MAX_FILES = 500; // 최대 파일 수 제한
+    
     try {
       const files = await glob(filePattern, {
         cwd: path.resolve(directory),
-        ignore: ['**/node_modules/**', '**/.git/**', '**/*.min.js']
+        ignore: ['**/node_modules/**', '**/.git/**', '**/*.min.js', '**/dist/**'],
+        nodir: true,  // 디렉토리 제외
+        maxDepth: 5   // 최대 깊이 제한
       });
 
       const results: SearchResult[] = [];
       const regex = new RegExp(searchPattern, 'gi');
+      const limitedFiles = files.slice(0, MAX_FILES);
 
-      for (const file of files) {
+      for (const file of limitedFiles) {
+        // 시간 제한 체크
+        if (Date.now() - startTime > MAX_DURATION) {
+          console.warn('Search content timeout - returning partial results');
+          break;
+        }
         const filePath = path.join(directory, file);
         try {
+          const stats = await fs.stat(filePath);
+          // 큰 파일 스킵 (1MB 이상)
+          if (stats.size > 1024 * 1024) continue;
+          
           const content = await fs.readFile(filePath, 'utf-8');
           const lines = content.split('\n');
           
-          lines.forEach((line, index) => {
+          // 라인 수 제한
+          const maxLines = Math.min(lines.length, 1000);
+          
+          for (let index = 0; index < maxLines; index++) {
+            const line = lines[index];
             const matches = [...line.matchAll(regex)];
             matches.forEach(match => {
               results.push({
@@ -258,9 +278,13 @@ export class FileSystemManager {
                 context: line.trim()
               });
             });
-          });
+            
+            // 결과가 너무 많으면 중단
+            if (results.length > 1000) break;
+          }
         } catch (e) {
           // 파일을 읽을 수 없으면 스킵
+          continue;
         }
       }
 
@@ -751,7 +775,8 @@ ${comparison.hash2 ? `- Hash 2: ${comparison.hash2}` : ''}
 
   // 7. 퍼지 검색
   async fuzzySearch(pattern: string, directory: string, threshold: number = 0.7): Promise<{ content: [{ type: string; text: string }] }> {
-    const results = await this.searchManager.fuzzySearch(pattern, directory, threshold);
+    try {
+      const results = await this.searchManager.fuzzySearch(pattern, directory, threshold);
     
     const formatted = results.slice(0, 20).map(r => 
       `${r.path} - Similarity: ${(r.score * 100).toFixed(1)}%`
@@ -763,22 +788,64 @@ ${comparison.hash2 ? `- Hash 2: ${comparison.hash2}` : ''}
         text: `Found ${results.length} similar files:\n${formatted}`
       }]
     };
+    } catch (error) {
+      console.error('Fuzzy search error:', error);
+      return {
+        content: [{
+          type: 'text',
+          text: 'Fuzzy search failed: ' + (error instanceof Error ? error.message : 'Unknown error')
+        }]
+      };
+    }
   }
 
   // 8. 의미론적 검색
   async semanticSearch(query: string, directory: string): Promise<{ content: [{ type: string; text: string }] }> {
-    const results = await this.searchManager.semanticSearch(query, directory);
-    
-    const formatted = results.slice(0, 20).map(r => 
-      `${r.path} - Score: ${r.score.toFixed(3)}`
-    ).join('\n');
-    
-    return {
-      content: [{
-        type: 'text',
-        text: `Semantic search results for "${query}":\n${formatted}`
-      }]
-    };
+    try {
+      const startTime = Date.now();
+      const MAX_DURATION = 15000; // 15초 제한 (의미론적 검색은 더 복잡하므로)
+      
+      // Promise.race를 사용해 타임아웃 적용
+      const searchPromise = this.searchManager.semanticSearch(query, directory);
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Semantic search timeout')), MAX_DURATION);
+      });
+      
+      const results = await Promise.race([searchPromise, timeoutPromise]).catch(err => {
+        console.warn('Semantic search interrupted:', err.message);
+        return [];
+      });
+      
+      if (!Array.isArray(results)) {
+        return {
+          content: [{
+            type: 'text',
+            text: 'Semantic search failed: Invalid results'
+          }]
+        };
+      }
+      
+      const formatted = results.slice(0, 20).map(r => 
+        `${r.path} - Score: ${r.score.toFixed(3)}`
+      ).join('\n');
+      
+      return {
+        content: [{
+          type: 'text',
+          text: results.length > 0 
+            ? `Semantic search results for "${query}":\n${formatted}` 
+            : 'No semantic matches found'
+        }]
+      };
+    } catch (error) {
+      console.error('Semantic search error:', error);
+      return {
+        content: [{
+          type: 'text',
+          text: 'Semantic search failed: ' + (error instanceof Error ? error.message : 'Unknown error')
+        }]
+      };
+    }
   }
 
   // 9. 리팩토링 제안

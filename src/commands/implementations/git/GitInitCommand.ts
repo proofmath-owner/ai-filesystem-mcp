@@ -23,11 +23,12 @@ export class GitInitCommand extends BaseCommand {
 
 
   protected validateArgs(args: Record<string, any>): void {
-
-
-    // No required fields to validate
-
-
+    if (args.path !== undefined) {
+      this.assertString(args.path, 'path');
+    }
+    if (args.bare !== undefined) {
+      this.assertBoolean(args.bare, 'bare');
+    }
   }
 
 
