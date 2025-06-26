@@ -8,9 +8,9 @@ export class FuzzySearchCommand extends BaseCommand {
   readonly inputSchema = {
     type: 'object' as const,
     properties: {
-      query: {
+      pattern: {
         type: 'string' as const,
-        description: 'Search query'
+        description: 'Search pattern'
       },
       directory: {
         type: 'string' as const,
@@ -36,11 +36,11 @@ export class FuzzySearchCommand extends BaseCommand {
         description: 'File extensions to filter by'
       }
     },
-    required: ['query']
+    required: ['pattern']
   };
 
   protected validateArgs(args: Record<string, any>): void {
-    this.assertString(args.query, 'query');
+    this.assertString(args.pattern, 'pattern');
     
     if (args.directory !== undefined) {
       this.assertString(args.directory, 'directory');
@@ -69,7 +69,7 @@ export class FuzzySearchCommand extends BaseCommand {
     try {
       const searchService = context.container.getService<SearchService>('searchService');
       const results = await searchService.fuzzySearch(
-        context.args.query,
+        context.args.pattern,
         context.args.directory || '.',
         {
           threshold: context.args.threshold || 0.6,
@@ -79,7 +79,7 @@ export class FuzzySearchCommand extends BaseCommand {
       );
 
       return this.formatResult(JSON.stringify({
-        query: context.args.query,
+        pattern: context.args.pattern,
         totalResults: results.length,
         results: results.map(r => ({
           path: r.path,

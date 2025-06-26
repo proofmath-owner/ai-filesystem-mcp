@@ -29,7 +29,50 @@ export class CodeAnalysisService implements ICodeAnalysisService {
   ) {}
 
   async analyzeCode(path: string): Promise<CodeAnalysis> {
-    return this.astProcessor.analyzeCode(path);
+    const basicAnalysis = await this.astProcessor.analyzeCode(path);
+    const qualityMetrics = await this.analyzeQuality(path);
+    
+    // Enhance basic analysis with detailed metrics
+    const enhancedAnalysis = {
+      ...basicAnalysis,
+      summary: {
+        totalFunctions: basicAnalysis.functions.length,
+        totalClasses: basicAnalysis.classes.length,
+        totalImports: basicAnalysis.imports.length,
+        totalExports: basicAnalysis.exports.length,
+        linesOfCode: qualityMetrics.linesOfCode
+      },
+      complexity: {
+        overall: qualityMetrics.complexity,
+        maintainability: qualityMetrics.maintainability,
+        rating: this.getComplexityRating(qualityMetrics.complexity)
+      },
+      issues: qualityMetrics.issues.map((issue: any) => ({
+        type: issue.type,
+        severity: issue.type === 'warning' ? 'medium' : 'low',
+        message: issue.message,
+        category: this.categorizeIssue(issue.message)
+      })),
+      suggestions: [
+        ...(qualityMetrics.complexity > 10 ? [{
+          type: 'complexity',
+          message: 'Consider breaking down complex functions',
+          severity: 'medium'
+        }] : []),
+        ...(basicAnalysis.functions.length > 20 ? [{
+          type: 'structure',
+          message: 'Consider splitting this file into smaller modules',
+          severity: 'low'
+        }] : []),
+        ...(basicAnalysis.functions.some((f: any) => !f.name || f.name.length < 3) ? [{
+          type: 'naming',
+          message: 'Use more descriptive function names',
+          severity: 'low'
+        }] : [])
+      ]
+    };
+    
+    return enhancedAnalysis;
   }
 
   async modifyCode(
@@ -295,6 +338,20 @@ export class CodeAnalysisService implements ICodeAnalysisService {
     maintainability -= analysis.functions.length > 20 ? 10 : 0;
     
     return Math.max(0, maintainability);
+  }
+  
+  private getComplexityRating(complexity: number): string {
+    if (complexity <= 5) return 'low';
+    if (complexity <= 10) return 'medium';
+    if (complexity <= 20) return 'high';
+    return 'very_high';
+  }
+  
+  private categorizeIssue(message: string): string {
+    if (message.includes('function')) return 'structure';
+    if (message.includes('complex')) return 'complexity';
+    if (message.includes('naming')) return 'naming';
+    return 'general';
   }
 
   private addImport(ast: any, importName: string, importPath: string): void {
