@@ -1,5 +1,5 @@
-import { ISearchService } from '../../interfaces/ISearchService.js';
-import { ContentSearcher, SearchResult } from './ContentSearcher.js';
+import { ISearchService, SearchResult } from '../../interfaces/ISearchService.js';
+import { ContentSearcher } from './ContentSearcher.js';
 import { FuzzySearcher, FuzzySearchResult } from './FuzzySearcher.js';
 import { SemanticSearcher, SemanticSearchResult } from './SemanticSearcher.js';
 import * as fs from 'fs/promises';

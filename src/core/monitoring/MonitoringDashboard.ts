@@ -5,9 +5,12 @@ export class MonitoringDashboard {
   private monitoring: MonitoringManager;
   private updateInterval: any = null;
   private isRunning = false;
+  private enableLogging: boolean;
 
   constructor(monitoring: MonitoringManager) {
     this.monitoring = monitoring;
+    // Only enable detailed logging in development or when explicitly requested
+    this.enableLogging = process.env.NODE_ENV === 'development' || process.env.MCP_ENABLE_DASHBOARD_LOGS === 'true';
   }
 
   start(): void {
@@ -55,6 +58,11 @@ export class MonitoringDashboard {
   }
 
   private render(): void {
+    // Skip rendering if logging is disabled
+    if (!this.enableLogging) {
+      return;
+    }
+    
     this.clearScreen();
     
     const stats = this.monitoring.getStats();

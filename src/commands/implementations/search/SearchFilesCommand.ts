@@ -21,7 +21,7 @@ export class SearchFilesCommand extends BaseCommand {
 
   protected async executeCommand(context: CommandContext): Promise<CommandResult> {
     const searchService = context.container.getService<ISearchService>('searchService');
-    const results = await searchService.searchFiles(context.args.pattern, context.args.directory);
+    const results = await searchService.searchFiles(context.args.directory, context.args.pattern);
 
     if (results.length === 0) {
       return this.formatResult('No files found matching the pattern');

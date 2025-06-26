@@ -2,9 +2,9 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 import { glob } from 'glob';
 import { minimatch } from 'minimatch';
-import natural from 'natural';
+import * as natural from 'natural';
 import { parse } from '@babel/parser';
-import traverse from '@babel/traverse';
+import * as traverse from '@babel/traverse';
 import * as t from '@babel/types';
 
 const TfIdf = natural.TfIdf;

@@ -3,36 +3,49 @@ import { BaseCommand } from '../base/BaseCommand.js';
 
 export class CommandLoader {
   private registry: CommandRegistry;
+  private enableDebugLogs: boolean;
 
   constructor(registry: CommandRegistry) {
     this.registry = registry;
+    // Only enable debug logs in development or when explicitly requested
+    this.enableDebugLogs = process.env.NODE_ENV === 'development' || process.env.MCP_DEBUG_COMMANDS === 'true';
   }
 
   /**
    * 지정된 디렉토리에서 모든 명령어를 자동으로 로드합니다.
    */
   async loadCommands(): Promise<void> {
-    console.log('Loading commands...');
+    if (this.enableDebugLogs) {
+      console.log('Loading commands...');
+    }
     
     try {
       // File commands
       const fileModule = await import('../implementations/file/index.js');
-      console.log('File commands available:', Object.keys(fileModule));
+      if (this.enableDebugLogs) {
+        console.log('File commands available:', Object.keys(fileModule));
+      }
       const { ReadFileCommand, WriteFileCommand, UpdateFileCommand, MoveFileCommand, ReadFilesCommand } = fileModule;
       
       // Directory commands
       const dirModule = await import('../implementations/directory/index.js');
-      console.log('Directory commands available:', Object.keys(dirModule));
+      if (this.enableDebugLogs) {
+        console.log('Directory commands available:', Object.keys(dirModule));
+      }
       const { CreateDirectoryCommand, ListDirectoryCommand } = dirModule;
       
       // Security commands
       const secModule = await import('../implementations/security/index.js');
-      console.log('Security commands available:', Object.keys(secModule));
+      if (this.enableDebugLogs) {
+        console.log('Security commands available:', Object.keys(secModule));
+      }
       const { ScanSecretsCommand, EncryptFileCommand, DecryptFileCommand, SecurityAuditCommand } = secModule;
       
       // Shell commands
       const shellModule = await import('../implementations/shell/index.js');
-      console.log('Shell commands available:', Object.keys(shellModule));
+      if (this.enableDebugLogs) {
+        console.log('Shell commands available:', Object.keys(shellModule));
+      }
       const { ExecuteShellCommand, QuickShellCommand } = shellModule;
       
       // Register file commands
@@ -51,30 +64,42 @@ export class CommandLoader {
       this.registry.register(new EncryptFileCommand());
       this.registry.register(new DecryptFileCommand());
       this.registry.register(new SecurityAuditCommand());
-      console.log('Registered security commands');
+      if (this.enableDebugLogs) {
+        console.log('Registered security commands');
+      }
       
       // Register shell commands
       this.registry.register(new ExecuteShellCommand());
       this.registry.register(new QuickShellCommand());
-      console.log('Registered shell commands');
+      if (this.enableDebugLogs) {
+        console.log('Registered shell commands');
+      }
       
       // Utils commands
       const utilsModule = await import('../implementations/utils/index.js');
-      console.log('Utils commands available:', Object.keys(utilsModule));
+      if (this.enableDebugLogs) {
+        console.log('Utils commands available:', Object.keys(utilsModule));
+      }
       const { DiffFilesCommand, CompressFilesCommand, ExtractArchiveCommand, GetFileMetadataCommand, ChangePermissionsCommand } = utilsModule;
       
       // Batch commands
       const batchModule = await import('../implementations/batch/index.js');
-      console.log('Batch commands available:', Object.keys(batchModule));
+      if (this.enableDebugLogs) {
+        console.log('Batch commands available:', Object.keys(batchModule));
+      }
       const { BatchOperationsCommand, TransactionCommand } = batchModule;
       
       // Monitoring commands
       const monitoringModule = await import('../implementations/monitoring/index.js');
-      console.log('Monitoring commands available:', Object.keys(monitoringModule));
+      if (this.enableDebugLogs) {
+        console.log('Monitoring commands available:', Object.keys(monitoringModule));
+      }
       const { FileWatcherCommand } = monitoringModule;
       // Git commands
       const gitModule = await import('../implementations/git/index.js');
-      console.log('Git commands available:', Object.keys(gitModule));
+      if (this.enableDebugLogs) {
+        console.log('Git commands available:', Object.keys(gitModule));
+      }
       const { 
         GitInitCommand, GitAddCommand, GitCommitCommand, GitPushCommand,
         GitPullCommand, GitBranchCommand, GitCheckoutCommand, GitLogCommand,
@@ -83,12 +108,16 @@ export class CommandLoader {
       
       // Search commands
       const searchModule = await import('../implementations/search/index.js');
-      console.log('Search commands available:', Object.keys(searchModule));
+      if (this.enableDebugLogs) {
+        console.log('Search commands available:', Object.keys(searchModule));
+      }
       const { SearchFilesCommand, SearchContentCommand, FuzzySearchCommand, SemanticSearchCommand } = searchModule;
       
       // Code commands
       const codeModule = await import('../implementations/code/index.js');
-      console.log('Code commands available:', Object.keys(codeModule));
+      if (this.enableDebugLogs) {
+        console.log('Code commands available:', Object.keys(codeModule));
+      }
       const { AnalyzeCodeCommand, ModifyCodeCommand, SuggestRefactoringCommand, FormatCodeCommand } = codeModule;
       
       // Register git commands
@@ -130,12 +159,14 @@ export class CommandLoader {
       // Register monitoring commands
       this.registry.register(new FileWatcherCommand());
       
-      console.log(`Loaded ${this.registry.getAllCommands().length} commands`);
-      
-      // List all loaded commands for debugging
-      this.registry.getAllCommands().forEach(cmd => {
-        console.log(`  - ${cmd.name}: ${cmd.description}`);
-      });
+      if (this.enableDebugLogs) {
+        console.log(`Loaded ${this.registry.getAllCommands().length} commands`);
+        
+        // List all loaded commands for debugging
+        this.registry.getAllCommands().forEach(cmd => {
+          console.log(`  - ${cmd.name}: ${cmd.description}`);
+        });
+      }
     } catch (error) {
       console.error('Error loading commands:', error);
       throw error;
@@ -156,7 +187,9 @@ export class CommandLoader {
         if (this.isCommandClass(CommandClass)) {
           const command = new CommandClass();
           this.registry.register(command);
-          console.log(`Loaded command: ${command.name}`);
+          if (this.enableDebugLogs) {
+            console.log(`Loaded command: ${command.name}`);
+          }
         }
       }
     } catch (error) {

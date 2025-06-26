@@ -15,7 +15,16 @@
       "Bash(./scripts/deployment/production-deploy.sh:*)",
       "Bash(npm run test:*)",
       "Bash(npm pack)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git tag:*)",
+      "Bash(git push:*)",
+      "Bash(gh release create:*)",
+      "Bash(./setup.sh:*)",
+      "Bash(npm install:*)",
+      "Bash(npx jest:*)",
+      "Bash(find:*)",
+      "Bash(rg:*)"
     ],
     "deny": []
   }

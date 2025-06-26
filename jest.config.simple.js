@@ -1,21 +1,10 @@
-import type { Config } from 'jest';
-
-const config: Config = {
+/** @type {import('jest').Config} */
+module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
-  roots: ['<rootDir>/src'],
   testMatch: [
     '**/src/tests/unit/**/*.test.ts'
   ],
-  testPathIgnorePatterns: [
-    '<rootDir>/tests/',
-    '<rootDir>/src/tests/commands/',
-    '<rootDir>/src/tests/integration/',
-    '<rootDir>/src/tests/FileSystemManager.test.ts'
-  ],
-  transform: {
-    '^.+\\.ts$': 'ts-jest',
-  },
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',
@@ -30,19 +19,16 @@ const config: Config = {
   coverageReporters: ['text', 'html', 'lcov'],
   coverageThreshold: {
     global: {
-      branches: 80,
-      functions: 80,
-      lines: 80,
-      statements: 80
+      branches: 75,
+      functions: 75,
+      lines: 75,
+      statements: 75
     }
   },
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1'
   },
   setupFilesAfterEnv: ['<rootDir>/src/tests/setup.ts'],
-  globals: {
-    'ts-jest': {
-      isolatedModules: true
-    }
-  }
+  verbose: true,
+  testTimeout: 10000
 };

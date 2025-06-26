@@ -1,4 +1,5 @@
-import { BaseCommand, CommandContext, CommandResult } from '../../base/BaseCommand.js';
+import { BaseCommand } from '../../base/BaseCommand.js';
+import { CommandContext, CommandResult } from '../../../core/interfaces/ICommand.js';
 
 export class GitStatusCommand extends BaseCommand {
   readonly name = 'git_status';
