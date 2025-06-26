@@ -32,29 +32,13 @@ export class GetFileMetadataCommand extends BaseCommand {
 
   protected async executeCommand(context: CommandContext): Promise<CommandResult> {
     try {
-      const fileService = context.container.getService<IFileService>('fileService');
-      const result = await fileService.getFileMetadata(context.args.path);
+      const fileService = context.container.getService<any>('fileService');
+      const metadata = await fileService.getMetadata(context.args.path);
       
-      // Parse the JSON response from the service
-      const metadata = JSON.parse(result.content[0].text);
-
       return {
         content: [{
           type: 'text',
-          text: JSON.stringify({
-            path: metadata.path,
-            name: metadata.name,
-            size: metadata.size,
-            created: metadata.created,
-            modified: metadata.modified,
-            accessed: metadata.accessed,
-            isDirectory: metadata.isDirectory,
-            isFile: metadata.isFile,
-            isSymbolicLink: metadata.isSymbolicLink,
-            permissions: metadata.permissions,
-            uid: metadata.uid,
-            gid: metadata.gid
-          }, null, 2)
+          text: JSON.stringify(metadata, null, 2)
         }]
       };
     } catch (error) {

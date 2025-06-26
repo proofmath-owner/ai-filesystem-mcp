@@ -11,6 +11,7 @@ export interface FileMetadata {
   mode: number;
   modifiedTime: Date;
   createdTime: Date;
+  accessedTime: Date;
   isDirectory: boolean;
   isFile: boolean;
   isSymbolicLink: boolean;

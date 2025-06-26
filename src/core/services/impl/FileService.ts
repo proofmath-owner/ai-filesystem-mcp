@@ -237,6 +237,7 @@ export class FileService implements IFileService {
         mode: stats.mode,
         modifiedTime: stats.mtime,
         createdTime: stats.birthtime,
+        accessedTime: stats.atime,
         isDirectory: stats.isDirectory(),
         isFile: stats.isFile(),
         isSymbolicLink: stats.isSymbolicLink()

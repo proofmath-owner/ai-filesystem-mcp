@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { createCommandRegistry } from './dist/core/commands/index.js';
+import { createCommandRegistry } from '../../dist/core/commands/index.js';
 
 async function testMetadataCommands() {
   console.log('🧪 Testing New Metadata Commands...\n');
