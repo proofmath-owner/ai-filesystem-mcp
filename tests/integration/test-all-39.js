@@ -4,8 +4,8 @@
  * 모든 명령어를 체계적으로 테스트
  */
 
-import { createCommandRegistry } from './dist/core/commands/index.js';
-import { FileSystemManager } from './dist/core/FileSystemManager.js';
+import { createCommandRegistry } from '../../dist/core/commands/index.js';
+import { FileSystemManager } from '../../dist/core/FileSystemManager.js';
 import fs from 'fs/promises';
 import path from 'path';
 
