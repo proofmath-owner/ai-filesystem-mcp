@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:check:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx tsc:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "Bash(grep:*)",
+      "Bash(rm:*)",
+      "Bash(node:*)",
+      "Bash(npx tsx:*)",
+      "Bash(touch:*)",
+      "Bash(chmod:*)",
+      "Bash(./scripts/deployment/production-deploy.sh:*)",
+      "Bash(npm run test:*)",
+      "Bash(npm pack)",
+      "Bash(git add:*)"
+    ],
+    "deny": []
+  }
+}

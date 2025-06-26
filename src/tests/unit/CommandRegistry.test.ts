@@ -1,5 +1,5 @@
-import { CommandRegistry } from '../../src/core/commands/CommandRegistry';
-import { Command, CommandContext, CommandResult } from '../../src/core/commands/Command';
+import { CommandRegistry } from '../../core/commands/CommandRegistry.js';
+import { Command, CommandContext, CommandResult } from '../../core/commands/Command.js';
 
 // Mock Command for testing
 class TestCommand extends Command {

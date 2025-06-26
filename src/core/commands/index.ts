@@ -14,6 +14,15 @@ import {
   MoveFileCommand
 } from './file/FileCommands.js';
 
+// Directory commands
+import {
+  CreateDirectoryCommand,
+  RemoveDirectoryCommand,
+  ListDirectoryCommand,
+  CopyDirectoryCommand,
+  MoveDirectoryCommand
+} from './directory/DirectoryCommands.js';
+
 // Search commands
 import {
   SearchFilesCommand,
@@ -37,6 +46,28 @@ import {
   GitHubCreatePRCommand,
   GitCloneCommand
 } from './git/GitCommands.js';
+
+// Git Advanced commands
+import {
+  GitRemoteCommand,
+  GitStashCommand,
+  GitTagCommand,
+  GitMergeCommand,
+  GitRebaseCommand,
+  GitDiffCommand,
+  GitResetCommand,
+  GitCherryPickCommand
+} from './git/GitAdvancedCommands.js';
+
+// Utility commands
+import {
+  TouchCommand,
+  CopyFileCommand,
+  DeleteFilesCommand,
+  GetWorkingDirectoryCommand,
+  DiskUsageCommand,
+  WatchDirectoryCommand
+} from './utility/UtilityCommands.js';
 
 // Code Analysis commands
 import {
@@ -119,6 +150,15 @@ export function createCommandRegistry(): CommandRegistry {
     new MoveFileCommand()
   ]);
 
+  // Directory commands
+  registry.registerMany([
+    new CreateDirectoryCommand(),
+    new RemoveDirectoryCommand(),
+    new ListDirectoryCommand(),
+    new CopyDirectoryCommand(),
+    new MoveDirectoryCommand()
+  ]);
+
   // Search commands
   registry.registerMany([
     new SearchFilesCommand(),
@@ -141,6 +181,28 @@ export function createCommandRegistry(): CommandRegistry {
     new GitLogCommand(),
     new GitHubCreatePRCommand(),
     new GitCloneCommand()
+  ]);
+
+  // Git Advanced commands
+  registry.registerMany([
+    new GitRemoteCommand(),
+    new GitStashCommand(),
+    new GitTagCommand(),
+    new GitMergeCommand(),
+    new GitRebaseCommand(),
+    new GitDiffCommand(),
+    new GitResetCommand(),
+    new GitCherryPickCommand()
+  ]);
+
+  // Utility commands
+  registry.registerMany([
+    new TouchCommand(),
+    new CopyFileCommand(),
+    new DeleteFilesCommand(),
+    new GetWorkingDirectoryCommand(),
+    new DiskUsageCommand(),
+    new WatchDirectoryCommand()
   ]);
 
   // Code Analysis commands

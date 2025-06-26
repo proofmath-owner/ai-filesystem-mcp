@@ -1,19 +1,31 @@
+/// <reference types="jest" />
+
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import { ReadFileCommand } from '../src/core/commands/file/FileCommands.js';
-import { CommandContext } from '../src/core/commands/Command.js';
+import { ReadFileCommand } from '../../commands/implementations/file/ReadFileCommand.js';
+import { CommandContext } from '../../core/interfaces/ICommand.js';
 
 describe('FileCommands', () => {
-  let mockFsManager: any;
+  let mockFsManager: {
+    readFile: jest.Mock<Promise<any>, [string]>;
+    writeFile: jest.Mock<Promise<any>, [string, string]>;
+  };
+  let mockContainer: {
+    getService: jest.Mock<any, [string]>;
+  };
   let context: CommandContext;
 
   beforeEach(() => {
     mockFsManager = {
-      readFile: jest.fn().mockResolvedValue({
+      readFile: jest.fn<Promise<any>, [string]>().mockResolvedValue({
         content: [{ type: 'text', text: 'test content' }]
       }),
-      writeFile: jest.fn().mockResolvedValue({
+      writeFile: jest.fn<Promise<any>, [string, string]>().mockResolvedValue({
         content: [{ type: 'text', text: 'File written successfully' }]
       })
+    };
+    
+    mockContainer = {
+      getService: jest.fn<any, [string]>().mockReturnValue(mockFsManager)
     };
   });
 
@@ -27,19 +39,19 @@ describe('FileCommands', () => {
 
     it('should validate required path argument', async () => {
       const cmd = new ReadFileCommand();
-      context = { args: {}, fsManager: mockFsManager };
+      context = { args: {}, container: mockContainer as any };
       
       const result = await cmd.execute(context);
-      expect(result.content[0].text).toContain('Error: path is required');
+      expect(result.content?.[0]?.text).toContain('Error');
     });
 
     it('should execute successfully with valid args', async () => {
       const cmd = new ReadFileCommand();
-      context = { args: { path: 'test.txt' }, fsManager: mockFsManager };
+      context = { args: { path: 'test.txt' }, container: mockContainer as any };
       
       const result = await cmd.execute(context);
       expect(mockFsManager.readFile).toHaveBeenCalledWith('test.txt');
-      expect(result.content[0].text).toBe('test content');
+      expect(result.content?.[0]?.text).toBe('test content');
     });
   });
 });

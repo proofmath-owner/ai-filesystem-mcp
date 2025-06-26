@@ -1,4 +1,4 @@
-import { Transaction } from '../../src/core/Transaction';
+import { Transaction } from '../../core/Transaction.js';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as os from 'os';

@@ -1,0 +1,84 @@
+{
+  // Performance optimization configuration for AI FileSystem MCP
+  
+  "cache": {
+    "enabled": true,
+    "maxSize": 100, // MB
+    "ttl": 3600000, // 1 hour in milliseconds
+    "cleanupInterval": 600000, // 10 minutes
+    "strategies": {
+      "file": {
+        "maxEntries": 1000,
+        "maxSizePerEntry": 5242880 // 5MB
+      },
+      "directory": {
+        "maxEntries": 500,
+        "ttl": 300000 // 5 minutes
+      },
+      "search": {
+        "maxEntries": 200,
+        "ttl": 600000 // 10 minutes
+      }
+    }
+  },
+  
+  "monitoring": {
+    "enabled": true,
+    "metricsRetention": 3600000, // 1 hour
+    "samplingRate": 1.0, // 100% - sample all operations
+    "alertThresholds": {
+      "errorRate": 0.05, // 5% error rate
+      "responseTime": 1000, // 1 second
+      "memoryUsage": 512 // MB
+    }
+  },
+  
+  "fileOperations": {
+    "bufferSize": 65536, // 64KB
+    "streamThreshold": 10485760, // 10MB - use streaming for larger files
+    "concurrency": {
+      "maxConcurrentReads": 10,
+      "maxConcurrentWrites": 5
+    }
+  },
+  
+  "search": {
+    "maxResultsPerSearch": 1000,
+    "indexing": {
+      "enabled": false, // Enable when needed
+      "updateInterval": 300000 // 5 minutes
+    },
+    "fuzzySearch": {
+      "threshold": 0.6,
+      "maxDistance": 3
+    }
+  },
+  
+  "git": {
+    "maxCommitHistory": 100,
+    "statusCacheTime": 5000, // 5 seconds
+    "fetchTimeout": 30000 // 30 seconds
+  },
+  
+  "security": {
+    "scanBufferSize": 32768, // 32KB
+    "maxScanFileSize": 104857600, // 100MB
+    "encryptionAlgorithm": "aes-256-gcm",
+    "secretPatterns": {
+      "updateInterval": 86400000 // 24 hours
+    }
+  },
+  
+  "batch": {
+    "maxBatchSize": 100,
+    "parallelism": 5,
+    "timeout": 60000 // 1 minute per batch
+  },
+  
+  "watcher": {
+    "maxWatchers": 100,
+    "debounceTime": 500, // milliseconds
+    "usePolling": false,
+    "pollingInterval": 1000
+  }
+}

@@ -1,0 +1,205 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "AI FileSystem MCP - Overview",
+    "description": "High-level overview of system health and performance",
+    "tags": [
+      "mcp",
+      "filesystem",
+      "monitoring"
+    ],
+    "timezone": "browser",
+    "refresh": "5s",
+    "time": {
+      "from": "now",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Request Rate",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 0
+        },
+        "targets": [
+          {
+            "expr": "rate(mcp_requests_total[5m])",
+            "refId": "A",
+            "datasource": "Prometheus"
+          }
+        ],
+        "yAxes": [
+          {
+            "unit": "reqps",
+            "min": 0
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Error Rate",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 0
+        },
+        "targets": [
+          {
+            "expr": "rate(mcp_errors_total[5m])",
+            "refId": "A",
+            "datasource": "Prometheus"
+          }
+        ],
+        "yAxes": [
+          {
+            "unit": "percent",
+            "min": 0,
+            "max": 100
+          }
+        ],
+        "thresholds": {
+          "steps": [
+            {
+              "color": "yellow",
+              "value": 1
+            },
+            {
+              "color": "red",
+              "value": 5
+            }
+          ]
+        }
+      },
+      {
+        "id": 3,
+        "title": "Response Time (95th percentile)",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(mcp_response_time_seconds_bucket[5m]))",
+            "refId": "A",
+            "datasource": "Prometheus"
+          }
+        ],
+        "yAxes": [
+          {
+            "unit": "ms",
+            "min": 0
+          }
+        ],
+        "thresholds": {
+          "steps": [
+            {
+              "color": "yellow",
+              "value": 1000
+            },
+            {
+              "color": "red",
+              "value": 5000
+            }
+          ]
+        }
+      },
+      {
+        "id": 4,
+        "title": "Active Commands",
+        "type": "singlestat",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        },
+        "targets": [
+          {
+            "expr": "mcp_active_commands",
+            "refId": "A",
+            "datasource": "Prometheus"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Memory Usage",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 16
+        },
+        "targets": [
+          {
+            "expr": "process_resident_memory_bytes / 1024 / 1024",
+            "refId": "A",
+            "datasource": "Prometheus"
+          }
+        ],
+        "yAxes": [
+          {
+            "unit": "MB",
+            "min": 0
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "CPU Usage",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 16
+        },
+        "targets": [
+          {
+            "expr": "rate(process_cpu_seconds_total[5m]) * 100",
+            "refId": "A",
+            "datasource": "Prometheus"
+          }
+        ],
+        "yAxes": [
+          {
+            "unit": "percent",
+            "min": 0,
+            "max": 100
+          }
+        ]
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "instance",
+          "type": "query",
+          "query": "label_values(mcp_info, instance)",
+          "datasource": "Prometheus",
+          "includeAll": true,
+          "allValue": ".*"
+        }
+      ]
+    }
+  },
+  "overwrite": true,
+  "inputs": [
+    {
+      "name": "DS_PROMETHEUS",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "value": "Prometheus"
+    }
+  ]
+}

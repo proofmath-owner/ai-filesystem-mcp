@@ -1,0 +1,72 @@
+# Source files
+src/
+*.ts
+!dist/**/*.d.ts
+
+# Development files
+.github/
+.vscode/
+.idea/
+docs/
+scripts/
+tests/
+coverage/
+test-data/
+e2e-test-data/
+benchmark-results/
+
+# Configuration files
+.eslintrc*
+.prettierrc*
+jest.config.*
+tsconfig.*
+.editorconfig
+.gitignore
+.dockerignore
+Dockerfile
+docker-compose.yml
+
+# Build and test artifacts
+*.log
+*.tgz
+*.tar.gz
+.env*
+.DS_Store
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Documentation source
+*.md
+!README.md
+!LICENSE
+
+# Security and reports
+security-report*
+performance-baseline.json
+test-output/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.backup
+*~
+
+# IDE
+*.sublime-*
+*.swp
+*.swo
+
+# OS files
+Thumbs.db
+
+# Git
+.git/
+
+# Cache
+.npm/
+.yarn/
+.cache/

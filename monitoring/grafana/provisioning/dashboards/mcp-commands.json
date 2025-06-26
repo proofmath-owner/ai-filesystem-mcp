@@ -1,0 +1,156 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "AI FileSystem MCP - Commands",
+    "description": "Detailed command execution metrics",
+    "tags": [
+      "mcp",
+      "filesystem",
+      "monitoring"
+    ],
+    "timezone": "browser",
+    "refresh": "10s",
+    "time": {
+      "from": "now",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Commands per Second",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 0
+        },
+        "targets": [
+          {
+            "expr": "rate(mcp_command_executions_total[5m])",
+            "refId": "A",
+            "datasource": "Prometheus"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Command Success Rate",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 0
+        },
+        "targets": [
+          {
+            "expr": "rate(mcp_command_successes_total[5m]) / rate(mcp_command_executions_total[5m]) * 100",
+            "refId": "A",
+            "datasource": "Prometheus"
+          }
+        ],
+        "yAxes": [
+          {
+            "unit": "percent",
+            "min": 0,
+            "max": 100
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Command Duration by Type",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(mcp_command_duration_seconds_bucket[5m])) by (command_type)",
+            "refId": "A",
+            "datasource": "Prometheus"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Most Used Commands",
+        "type": "table",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        },
+        "targets": [
+          {
+            "expr": "topk(10, sum by (command) (increase(mcp_command_executions_total[1h])))",
+            "refId": "A",
+            "datasource": "Prometheus"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Failed Commands",
+        "type": "table",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 16
+        },
+        "targets": [
+          {
+            "expr": "topk(10, sum by (command, error_type) (increase(mcp_command_failures_total[1h])))",
+            "refId": "A",
+            "datasource": "Prometheus"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Command Queue Size",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 16
+        },
+        "targets": [
+          {
+            "expr": "mcp_command_queue_size",
+            "refId": "A",
+            "datasource": "Prometheus"
+          }
+        ]
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "instance",
+          "type": "query",
+          "query": "label_values(mcp_info, instance)",
+          "datasource": "Prometheus",
+          "includeAll": true,
+          "allValue": ".*"
+        }
+      ]
+    }
+  },
+  "overwrite": true,
+  "inputs": [
+    {
+      "name": "DS_PROMETHEUS",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "value": "Prometheus"
+    }
+  ]
+}

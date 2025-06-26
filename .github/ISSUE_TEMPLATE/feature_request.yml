@@ -1,36 +1,196 @@
-name: Feature Request
-description: Suggest an idea for this project
-title: "[Feature]: "
-labels: ["enhancement"]
+name: 💡 Feature Request
+description: Suggest an idea to improve AI FileSystem MCP
+title: "[FEATURE] "
+labels: ["enhancement", "needs-review"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to suggest a new feature!
-  
+        Thanks for taking the time to suggest a new feature! Your ideas help make AI FileSystem MCP better for everyone.
+        
+        Before submitting, please:
+        1. Search existing feature requests to avoid duplicates
+        2. Check the roadmap to see if it's already planned
+        3. Consider if this fits the project's scope and vision
+
   - type: textarea
     id: problem
     attributes:
-      label: Is your feature request related to a problem?
-      description: A clear and concise description of what the problem is.
-      placeholder: I'm always frustrated when...
-  
+      label: 🎯 Problem Statement
+      description: What problem does this feature solve? What's the current pain point?
+      placeholder: |
+        I'm frustrated when...
+        Currently, users have to...
+        The workflow breaks down because...
+    validations:
+      required: true
+
   - type: textarea
     id: solution
     attributes:
-      label: Describe the solution you'd like
-      description: A clear and concise description of what you want to happen.
+      label: 💡 Proposed Solution
+      description: Describe the feature you'd like to see implemented
+      placeholder: |
+        I would like to be able to...
+        The feature should work by...
+        Users would interact with it by...
     validations:
       required: true
-  
+
+  - type: textarea
+    id: user-story
+    attributes:
+      label: 👤 User Story
+      description: Describe this feature as a user story
+      placeholder: |
+        As a [type of user], I want [goal/desire] so that [benefit/value].
+        
+        Example:
+        As a developer using AI FileSystem MCP, I want to batch rename files with patterns so that I can quickly reorganize my project structure.
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: ✅ Acceptance Criteria
+      description: What would make this feature complete and ready for users?
+      placeholder: |
+        - [ ] Feature works with all supported file types
+        - [ ] Proper error handling for edge cases
+        - [ ] Documentation includes usage examples
+        - [ ] Feature respects security level settings
+        - [ ] Performance impact is minimal
+      value: |
+        - [ ] 
+        - [ ] 
+        - [ ] 
+
   - type: textarea
     id: alternatives
     attributes:
-      label: Describe alternatives you've considered
-      description: A clear and concise description of any alternative solutions or features you've considered.
-  
+      label: 🔄 Alternative Solutions
+      description: Have you considered any alternative approaches or workarounds?
+      placeholder: |
+        Alternative approaches I've considered:
+        1. Using existing command X, but it doesn't handle...
+        2. Manual workaround involves..., but it's inefficient because...
+        3. Third-party tool Y exists, but it lacks...
+
   - type: textarea
-    id: additional
+    id: use-cases
     attributes:
-      label: Additional context
-      description: Add any other context or screenshots about the feature request here.
+      label: 🎮 Use Cases & Examples
+      description: Provide specific examples of how this feature would be used
+      placeholder: |
+        Example 1: Code Refactoring Workflow
+        - User wants to rename all components from PascalCase to kebab-case
+        - Command: ai-fs batch-rename --pattern "*.tsx" --from-case pascal --to-case kebab
+        - Result: All component files renamed consistently
+        
+        Example 2: Project Migration
+        - Moving from one framework to another
+        - Need to update import paths in hundreds of files
+        - This feature would automate the tedious manual work
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: 📂 Feature Category
+      description: Which area of AI FileSystem MCP does this feature belong to?
+      options:
+        - File Operations - Core file manipulation features
+        - Directory Operations - Directory management features
+        - Search & Discovery - Search and finding capabilities
+        - Git Integration - Git workflow automation
+        - Code Analysis - Code understanding and modification
+        - Security & Permissions - Security and access control
+        - Performance & Optimization - Speed and efficiency improvements
+        - Developer Experience - Tools and workflows for developers
+        - Integration & API - External integrations and APIs
+        - Documentation - Docs, guides, and examples
+        - Other - Doesn't fit existing categories
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 🎯 Priority Level
+      description: How important is this feature for your workflow?
+      options:
+        - Low - Nice to have, would be convenient
+        - Medium - Would improve my workflow significantly
+        - High - Critical for my productivity, blocking current work
+    validations:
+      required: true
+
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: ⚙️ Implementation Complexity (Your Estimate)
+      description: How complex do you think this feature would be to implement?
+      options:
+        - Simple - Small change to existing functionality
+        - Medium - New feature using existing infrastructure
+        - Complex - Requires significant new architecture
+        - Unknown - Not sure about implementation details
+    validations:
+      required: true
+
+  - type: textarea
+    id: technical-details
+    attributes:
+      label: 🔧 Technical Considerations
+      description: Any technical details, constraints, or implementation ideas you'd like to share?
+      placeholder: |
+        - This might require changes to the FileSystemManager
+        - Should integrate with existing caching system
+        - Need to consider memory usage for large files
+        - Could leverage existing Git integration
+        - Security implications: ...
+        - Performance considerations: ...
+
+  - type: checkboxes
+    id: research
+    attributes:
+      label: 📚 Research & Validation
+      description: Please confirm you've done the following
+      options:
+        - label: I have searched for existing feature requests
+          required: true
+        - label: I have checked the project roadmap and documentation
+          required: true
+        - label: I have considered if this fits the project's scope
+          required: true
+        - label: I can provide additional details if needed
+          required: true
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: 🤝 Contribution Interest
+      description: Would you be interested in helping with this feature?
+      options:
+        - label: I'd like to discuss the implementation approach
+          required: false
+        - label: I could help with testing and feedback
+          required: false
+        - label: I'm interested in contributing code (if I have the skills)
+          required: false
+        - label: I could help with documentation
+          required: false
+        - label: I could provide additional use cases and requirements
+          required: false
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 📋 Additional Context
+      description: Anything else you'd like to add? Screenshots, mockups, related issues, etc.
+      placeholder: |
+        - Related to existing issue #123
+        - Similar feature exists in project X
+        - Mockup/screenshot: (attach files)
+        - Links to relevant resources
+        - Community discussion: link

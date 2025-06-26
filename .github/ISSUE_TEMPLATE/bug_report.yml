@@ -1,62 +1,126 @@
-name: Bug Report
-description: File a bug report
-title: "[Bug]: "
-labels: ["bug", "triage"]
+name: 🐛 Bug Report
+description: Report a bug to help us improve AI FileSystem MCP
+title: "[BUG] "
+labels: ["bug", "needs-triage"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to fill out this bug report!
-  
+        Thanks for taking the time to fill out this bug report! Your feedback helps make AI FileSystem MCP better for everyone.
+        
+        Before submitting, please:
+        1. Search existing issues to avoid duplicates
+        2. Try the latest version
+        3. Read the relevant documentation
+
   - type: textarea
-    id: what-happened
+    id: description
     attributes:
-      label: What happened?
-      description: Also tell us, what did you expect to happen?
-      placeholder: Tell us what you see!
+      label: 🐛 Bug Description
+      description: A clear and concise description of what the bug is
+      placeholder: Describe what happened...
     validations:
       required: true
-  
+
   - type: textarea
-    id: reproduce
+    id: reproduction
     attributes:
-      label: Steps to reproduce
-      description: How can we reproduce this issue?
+      label: 🔄 Steps to Reproduce
+      description: Steps to reproduce the behavior
       placeholder: |
-        1. Run command '...'
-        2. See error
+        1. Execute command '...'
+        2. Set parameters '...'
+        3. See error
+      value: |
+        1. 
+        2. 
+        3. 
     validations:
       required: true
-  
-  - type: dropdown
-    id: version
+
+  - type: textarea
+    id: expected
     attributes:
-      label: Version
-      description: What version of ai-filesystem-mcp are you running?
-      options:
-        - 2.0.0
-        - 1.0.0
-        - Other (please specify)
+      label: ✅ Expected Behavior
+      description: What you expected to happen
+      placeholder: What should have happened instead?
     validations:
       required: true
-  
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: ❌ Actual Behavior
+      description: What actually happened
+      placeholder: What actually happened?
+    validations:
+      required: true
+
   - type: textarea
     id: environment
     attributes:
-      label: Environment
+      label: 💻 Environment
       description: |
-        examples:
-          - **OS**: Ubuntu 20.04
-          - **Node**: 20.x
+        Please provide details about your environment
+      placeholder: |
+        - OS: [e.g. macOS 14.0, Ubuntu 22.04, Windows 11]
+        - Node.js: [e.g. 20.10.0]
+        - NPM: [e.g. 10.2.0]
+        - AI FileSystem MCP: [e.g. 2.0.0]
+        - Security Level: [strict/moderate/permissive]
+        - Installation Method: [npm/docker/kubernetes]
       value: |
         - OS: 
-        - Node: 
+        - Node.js: 
+        - NPM: 
+        - AI FileSystem MCP: 
+        - Security Level: 
+        - Installation Method: 
     validations:
       required: true
-  
+
   - type: textarea
     id: logs
     attributes:
-      label: Relevant log output
-      description: Please copy and paste any relevant log output. This will be automatically formatted into code, so no need for backticks.
+      label: 📋 Error Logs
+      description: Please copy and paste any relevant log output
+      placeholder: Paste error logs, stack traces, or console output here
       render: shell
+
+  - type: textarea
+    id: config
+    attributes:
+      label: ⚙️ Configuration
+      description: Share relevant configuration (remove sensitive information)
+      placeholder: |
+        Include your configuration file or environment variables that might be relevant
+        (Please remove any sensitive information like API keys, passwords, etc.)
+      render: json
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: ✅ Checklist
+      description: Please confirm you have done the following
+      options:
+        - label: I have searched for existing issues
+          required: true
+        - label: I have tried the latest version
+          required: true
+        - label: I have read the relevant documentation
+          required: true
+        - label: I have removed sensitive information from logs/config
+          required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 🎯 Priority
+      description: How critical is this bug?
+      options:
+        - Low - Minor issue, workaround available
+        - Medium - Affects functionality but not critical
+        - High - Major functionality broken
+        - Critical - System crash, data loss, security issue
+    validations:
+      required: true

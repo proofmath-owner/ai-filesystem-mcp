@@ -1,4 +1,4 @@
-import { FileSystemManager } from '../core/FileSystemManager';
+import { FileSystemManager } from '../core/FileSystemManager.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 

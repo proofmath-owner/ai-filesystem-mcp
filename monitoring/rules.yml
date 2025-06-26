@@ -1,0 +1,43 @@
+groups:
+- name: mcp-alerts
+  rules:
+  - alert: MCPHighErrorRate
+    expr: rate(mcp_errors_total[5m]) > 0.1
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      summary: MCP error rate is high
+      description: Error rate is {{ $value }} errors per second
+  - alert: MCPHighResponseTime
+    expr: histogram_quantile(0.95, rate(mcp_response_time_seconds_bucket[5m])) > 5
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: MCP response time is high
+      description: 95th percentile response time is {{ $value }}s
+  - alert: MCPHighMemoryUsage
+    expr: process_resident_memory_bytes / 1024 / 1024 / 1024 > 2
+    for: 10m
+    labels:
+      severity: warning
+    annotations:
+      summary: MCP memory usage is high
+      description: Memory usage is {{ $value }}GB
+  - alert: MCPServiceDown
+    expr: up{job="mcp-server"} == 0
+    for: 30s
+    labels:
+      severity: critical
+    annotations:
+      summary: MCP service is down
+      description: MCP server is not responding
+  - alert: MCPSecurityIncident
+    expr: rate(mcp_security_events_total[5m]) > 0.1
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: Security incident detected
+      description: Security events rate: {{ $value }} events per second

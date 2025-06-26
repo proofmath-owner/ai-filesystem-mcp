@@ -1,0 +1,161 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "AI FileSystem MCP - Security",
+    "description": "Security events and monitoring",
+    "tags": [
+      "mcp",
+      "filesystem",
+      "monitoring"
+    ],
+    "timezone": "browser",
+    "refresh": "30s",
+    "time": {
+      "from": "now",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Security Events",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 0
+        },
+        "targets": [
+          {
+            "expr": "rate(mcp_security_events_total[5m]) by (event_type)",
+            "refId": "A",
+            "datasource": "Prometheus"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Failed Authentication Attempts",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 0
+        },
+        "targets": [
+          {
+            "expr": "rate(mcp_auth_failures_total[5m])",
+            "refId": "A",
+            "datasource": "Prometheus"
+          }
+        ],
+        "thresholds": {
+          "steps": [
+            {
+              "color": "yellow",
+              "value": 5
+            },
+            {
+              "color": "red",
+              "value": 20
+            }
+          ]
+        }
+      },
+      {
+        "id": 3,
+        "title": "Path Traversal Attempts",
+        "type": "singlestat",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        },
+        "targets": [
+          {
+            "expr": "increase(mcp_path_traversal_attempts_total[24h])",
+            "refId": "A",
+            "datasource": "Prometheus"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Shell Command Blocks",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        },
+        "targets": [
+          {
+            "expr": "rate(mcp_shell_command_blocks_total[5m])",
+            "refId": "A",
+            "datasource": "Prometheus"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "File Permission Violations",
+        "type": "table",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 16
+        },
+        "targets": [
+          {
+            "expr": "topk(10, sum by (path, user) (increase(mcp_permission_violations_total[1h])))",
+            "refId": "A",
+            "datasource": "Prometheus"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Security Level Distribution",
+        "type": "graph",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 16
+        },
+        "targets": [
+          {
+            "expr": "mcp_security_level by (level)",
+            "refId": "A",
+            "datasource": "Prometheus"
+          }
+        ]
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "instance",
+          "type": "query",
+          "query": "label_values(mcp_info, instance)",
+          "datasource": "Prometheus",
+          "includeAll": true,
+          "allValue": ".*"
+        }
+      ]
+    }
+  },
+  "overwrite": true,
+  "inputs": [
+    {
+      "name": "DS_PROMETHEUS",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "value": "Prometheus"
+    }
+  ]
+}

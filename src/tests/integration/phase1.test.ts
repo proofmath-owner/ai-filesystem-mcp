@@ -1,5 +1,5 @@
-import { createCommandRegistry } from '../../../src/core/commands/index';
-import { FileSystemManager } from '../../../src/core/FileSystemManager';
+import { createCommandRegistry } from '../../../src/core/commands/index.js';
+import { FileSystemManager } from '../../../src/core/FileSystemManager.js';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as os from 'os';

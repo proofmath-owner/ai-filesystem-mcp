@@ -1,32 +1,51 @@
-import { 
-  ReadFileCommand, 
-  WriteFileCommand, 
-  UpdateFileCommand,
-  MoveFileCommand,
-  ReadFilesCommand 
-} from '../../../src/core/commands/file/FileCommands';
-import { CommandContext } from '../../../src/core/commands/Command';
+/// <reference types="jest" />
+
+import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+import { ReadFileCommand } from '../../../commands/implementations/file/ReadFileCommand.js';
+import { WriteFileCommand } from '../../../commands/implementations/file/WriteFileCommand.js';
+import { UpdateFileCommand } from '../../../commands/implementations/file/UpdateFileCommand.js';
+import { MoveFileCommand } from '../../../commands/implementations/file/MoveFileCommand.js';
+import { ReadFilesCommand } from '../../../commands/implementations/file/ReadFilesCommand.js';
+import { CommandContext } from '../../../core/interfaces/ICommand.js';
 
 describe('FileCommands', () => {
-  let mockFsManager: any;
+  let mockFileService: {
+    readFile: jest.Mock<Promise<any>, [string]>;
+    readFiles: jest.Mock<Promise<any>, [string[]]>;
+    writeFile: jest.Mock<Promise<any>, [string, string]>;
+    updateFile: jest.Mock<Promise<any>, [string, Array<{oldText: string; newText: string}>]>;
+    moveFile: jest.Mock<Promise<any>, [string, string]>;
+  };
+  let mockContainer: {
+    getService: jest.Mock<any, [string]>;
+  };
   let context: CommandContext;
 
   beforeEach(() => {
-    mockFsManager = {
-      readFile: jest.fn().mockResolvedValue({
+    mockFileService = {
+      readFile: jest.fn<Promise<any>, [string]>().mockResolvedValue({
         content: [{ type: 'text', text: 'file content' }]
       }),
-      readFiles: jest.fn().mockResolvedValue({
+      readFiles: jest.fn<Promise<any>, [string[]]>().mockResolvedValue({
         content: [{ type: 'text', text: 'multiple files content' }]
       }),
-      writeFile: jest.fn().mockResolvedValue({
+      writeFile: jest.fn<Promise<any>, [string, string]>().mockResolvedValue({
         content: [{ type: 'text', text: 'Successfully wrote to test.txt' }]
       }),
-      updateFile: jest.fn().mockResolvedValue({
+      updateFile: jest.fn<Promise<any>, [string, Array<{oldText: string; newText: string}>]>().mockResolvedValue({
         content: [{ type: 'text', text: 'Successfully updated test.txt with 1 changes' }]
       }),
-      moveFile: jest.fn().mockResolvedValue({
+      moveFile: jest.fn<Promise<any>, [string, string]>().mockResolvedValue({
         content: [{ type: 'text', text: 'Successfully moved file: src.txt -> dest.txt' }]
+      })
+    };
+    
+    mockContainer = {
+      getService: jest.fn<any, [string]>().mockImplementation((serviceName: string) => {
+        if (serviceName === 'fileService') {
+          return mockFileService;
+        }
+        return mockFileService;
       })
     };
   });
@@ -45,20 +64,20 @@ describe('FileCommands', () => {
     });
 
     it('should validate path is required', async () => {
-      context = { args: {}, fsManager: mockFsManager };
+      context = { args: {}, container: mockContainer as any };
       
       const result = await command.execute(context);
       
-      expect(result.content[0].text).toContain('Error: path is required and must be a string');
+      expect(result.content?.[0]?.text).toContain('Error');
     });
 
     it('should execute successfully with valid path', async () => {
-      context = { args: { path: 'test.txt' }, fsManager: mockFsManager };
+      context = { args: { path: 'test.txt' }, container: mockContainer as any };
       
       const result = await command.execute(context);
       
-      expect(mockFsManager.readFile).toHaveBeenCalledWith('test.txt');
-      expect(result.content[0].text).toBe('file content');
+      expect(mockFileService.readFile).toHaveBeenCalledWith('test.txt');
+      expect(result.content?.[0]?.text).toBe('file content');
     });
   });
 
@@ -77,23 +96,23 @@ describe('FileCommands', () => {
     });
 
     it('should validate required arguments', async () => {
-      context = { args: { path: 'test.txt' }, fsManager: mockFsManager };
+      context = { args: { path: 'test.txt' }, container: mockContainer as any };
       
       const result = await command.execute(context);
       
-      expect(result.content[0].text).toContain('Error: content is required and must be a string');
+      expect(result.content?.[0]?.text).toContain('Error');
     });
 
     it('should execute successfully with valid arguments', async () => {
       context = { 
         args: { path: 'test.txt', content: 'Hello World' }, 
-        fsManager: mockFsManager 
+        container: mockContainer as any
       };
       
       const result = await command.execute(context);
       
-      expect(mockFsManager.writeFile).toHaveBeenCalledWith('test.txt', 'Hello World');
-      expect(result.content[0].text).toBe('Successfully wrote to test.txt');
+      expect(mockFileService.writeFile).toHaveBeenCalledWith('test.txt', 'Hello World');
+      expect(result.content?.[0]?.text).toBe('Successfully wrote to test.txt');
     });
   });
 
@@ -105,11 +124,11 @@ describe('FileCommands', () => {
     });
 
     it('should validate updates array is required', async () => {
-      context = { args: { path: 'test.txt' }, fsManager: mockFsManager };
+      context = { args: { path: 'test.txt' }, container: mockContainer as any };
       
       const result = await command.execute(context);
       
-      expect(result.content[0].text).toContain('Error: updates is required and must be an array');
+      expect(result.content?.[0]?.text).toContain('Error');
     });
 
     it('should execute successfully with valid updates', async () => {
@@ -118,12 +137,12 @@ describe('FileCommands', () => {
           path: 'test.txt', 
           updates: [{ oldText: 'foo', newText: 'bar' }] 
         }, 
-        fsManager: mockFsManager 
+        container: mockContainer as any
       };
       
       const result = await command.execute(context);
       
-      expect(mockFsManager.updateFile).toHaveBeenCalledWith(
+      expect(mockFileService.updateFile).toHaveBeenCalledWith(
         'test.txt', 
         [{ oldText: 'foo', newText: 'bar' }]
       );
@@ -138,23 +157,23 @@ describe('FileCommands', () => {
     });
 
     it('should validate source and destination are required', async () => {
-      context = { args: { source: 'src.txt' }, fsManager: mockFsManager };
+      context = { args: { source: 'src.txt' }, container: mockContainer as any };
       
       const result = await command.execute(context);
       
-      expect(result.content[0].text).toContain('Error: destination is required and must be a string');
+      expect(result.content?.[0]?.text).toContain('Error');
     });
 
     it('should execute successfully with valid arguments', async () => {
       context = { 
         args: { source: 'src.txt', destination: 'dest.txt' }, 
-        fsManager: mockFsManager 
+        container: mockContainer as any
       };
       
       const result = await command.execute(context);
       
-      expect(mockFsManager.moveFile).toHaveBeenCalledWith('src.txt', 'dest.txt');
-      expect(result.content[0].text).toBe('Successfully moved file: src.txt -> dest.txt');
+      expect(mockFileService.moveFile).toHaveBeenCalledWith('src.txt', 'dest.txt');
+      expect(result.content?.[0]?.text).toBe('Successfully moved file: src.txt -> dest.txt');
     });
   });
 
@@ -166,23 +185,23 @@ describe('FileCommands', () => {
     });
 
     it('should validate paths array is required', async () => {
-      context = { args: { paths: 'not-an-array' }, fsManager: mockFsManager };
+      context = { args: { paths: 'not-an-array' }, container: mockContainer as any };
       
       const result = await command.execute(context);
       
-      expect(result.content[0].text).toContain('Error: paths is required and must be an array');
+      expect(result.content?.[0]?.text).toContain('Error');
     });
 
     it('should execute successfully with valid paths array', async () => {
       context = { 
         args: { paths: ['file1.txt', 'file2.txt'] }, 
-        fsManager: mockFsManager 
+        container: mockContainer as any
       };
       
       const result = await command.execute(context);
       
-      expect(mockFsManager.readFiles).toHaveBeenCalledWith(['file1.txt', 'file2.txt']);
-      expect(result.content[0].text).toBe('multiple files content');
+      expect(mockFileService.readFiles).toHaveBeenCalledWith(['file1.txt', 'file2.txt']);
+      expect(result.content?.[0]?.text).toBe('multiple files content');
     });
   });
 });

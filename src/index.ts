@@ -7,9 +7,7 @@ import {
   Tool
 } from '@modelcontextprotocol/sdk/types.js';
 
-import { FileSystemManager } from './core/FileSystemManager.js';
-import { createCommandRegistry } from './core/commands/index.js';
-import { createLegacyCommandsRegistry } from './legacy/LegacyCommands.js';
+import { ServiceContainer } from './core/ServiceContainer.js';
 
 // MCP 서버 초기화
 const server = new Server(
@@ -24,27 +22,16 @@ const server = new Server(
   }
 );
 
-// FileSystem 매니저 인스턴스
-const fsManager = new FileSystemManager();
-
-// Command Registry 초기화
-const commandRegistry = createCommandRegistry();
-
-// Legacy commands 임시 등록 (점진적 마이그레이션)
-const legacyRegistry = createLegacyCommandsRegistry(fsManager);
+// Service Container 초기화
+const container = new ServiceContainer();
 
 // 도구 목록 요청 처리
 server.setRequestHandler(ListToolsRequestSchema, async () => {
-  // 새 명령어 시스템의 도구들
-  const newTools = commandRegistry.getAllTools();
+  const registry = container.getCommandRegistry();
+  const tools = registry.getAllTools();
   
-  // Legacy 도구들 (아직 마이그레이션되지 않은 것들)
-  const legacyTools = legacyRegistry.tools;
-  
-  // 모든 도구 합치기
-  const allTools = [...newTools, ...legacyTools];
-  
-  return { tools: allTools };
+  console.error(`Returning ${tools.length} tools`);
+  return { tools };
 });
 
 // 도구 실행 요청 처리
@@ -57,22 +44,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       throw new Error('Invalid arguments');
     }
 
-    // 새 명령어 시스템에서 찾기
-    if (commandRegistry.has(name)) {
-      return await commandRegistry.execute(name, {
-        args,
-        fsManager
-      });
-    }
-
-    // Legacy 시스템에서 찾기
-    const legacyHandler = legacyRegistry.handlers.get(name);
-    if (legacyHandler) {
-      return await legacyHandler(args);
-    }
-
-    // 명령어를 찾을 수 없음
-    throw new Error(`Unknown tool: ${name}`);
+    const registry = container.getCommandRegistry();
+    return await registry.execute(name, {
+      args,
+      container
+    });
 
   } catch (error) {
     return {
@@ -88,12 +64,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
 // 프로세스 종료 시 정리
 process.on('SIGINT', async () => {
-  await fsManager.cleanup();
+  await container.cleanup();
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
-  await fsManager.cleanup();
+  await container.cleanup();
   process.exit(0);
 });
 
@@ -110,13 +86,22 @@ process.on('uncaughtException', (error) => {
 // MCP 서버 시작
 async function main() {
   try {
+    // Container 초기화
+    await container.initialize();
+    
     const transport = new StdioServerTransport();
     await server.connect(transport);
     
+    const registry = container.getCommandRegistry();
     console.error(`AI FileSystem MCP Server v2.0 started`);
-    console.error(`- New commands: ${commandRegistry.size}`);
-    console.error(`- Legacy commands: ${legacyRegistry.handlers.size}`);
-    console.error(`- Total commands: ${commandRegistry.size + legacyRegistry.handlers.size}`);
+    console.error(`Total commands: ${registry.size}`);
+    
+    // List all commands for debugging
+    const commands = registry.getAllCommands();
+    console.error('Available commands:');
+    commands.forEach(cmd => {
+      console.error(`  - ${cmd.name}`);
+    });
     
   } catch (error) {
     console.error('Failed to start server:', error);

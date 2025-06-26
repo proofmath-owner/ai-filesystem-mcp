@@ -428,7 +428,7 @@ ${status.untracked.map(f => `  ? ${f}`).join('\n')}
   async gitCommit(message: string, files?: string[]): Promise<{ content: [{ type: string; text: string }] }> {
     try {
       const result = await this.git.commit(message, files);
-      if (result.success) {
+      if (!result.error) {
         return {
           content: [{ type: 'text', text: `Successfully committed with hash: ${result.commitHash}` }]
         };

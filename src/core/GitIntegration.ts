@@ -155,14 +155,9 @@ export class GitIntegration {
       const hashMatch = stdout.match(/\[[\w\s]+\s+([\w]+)\]/);
       const commitHash = hashMatch ? hashMatch[1] : undefined;
 
-      return {
-        success: true,
-        commitHash
-      };
+      return { success: true, commitHash };
     } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : String(error)
+      return { success: false, error: error instanceof Error ? error.message : String(error)
       };
     }
   }
@@ -541,6 +536,267 @@ export class GitIntegration {
       await fs.writeFile(gitignorePath, newContent);
     } catch (error) {
       throw new Error(`Update .gitignore failed: ${error}`);
+    }
+  }
+
+  // ===== 추가 메서드들 =====
+  
+  // Remote 관리 (오버로드된 버전)
+  async remote(options: {
+    action: 'list' | 'add' | 'remove' | 'rename' | 'set-url';
+    name?: string;
+    url?: string;
+    newName?: string;
+    verbose?: boolean;
+  }): Promise<{ output: string }> {
+    try {
+      let command = 'git remote';
+      
+      switch (options.action) {
+        case 'list':
+          command += options.verbose ? ' -v' : '';
+          break;
+        case 'add':
+          command += ` add ${options.name} ${options.url}`;
+          break;
+        case 'remove':
+          command += ` remove ${options.name}`;
+          break;
+        case 'rename':
+          command += ` rename ${options.name} ${options.newName}`;
+          break;
+        case 'set-url':
+          command += ` set-url ${options.name} ${options.url}`;
+          break;
+      }
+      
+      const { stdout } = await execAsync(command, { cwd: this.workingDir });
+      return { output: stdout };
+    } catch (error) {
+      throw new Error(`Git remote ${options.action} failed: ${error}`);
+    }
+  }
+
+  // Stash 고급 관리 (오버로드된 버전)
+  async stashAdvanced(options: {
+    action: 'push' | 'pop' | 'list' | 'show' | 'drop' | 'clear';
+    message?: string;
+    index?: number;
+    includeUntracked?: boolean;
+  }): Promise<{ output: string }> {
+    try {
+      let command = 'git stash';
+      
+      switch (options.action) {
+        case 'push':
+          command += ' push';
+          if (options.includeUntracked) command += ' -u';
+          if (options.message) command += ` -m "${options.message}"`;
+          break;
+        case 'pop':
+          command += ' pop';
+          if (options.index !== undefined) command += ` stash@{${options.index}}`;
+          break;
+        case 'list':
+          command += ' list';
+          break;
+        case 'show':
+          command += ' show';
+          if (options.index !== undefined) command += ` stash@{${options.index}}`;
+          break;
+        case 'drop':
+          command += ' drop';
+          if (options.index !== undefined) command += ` stash@{${options.index}}`;
+          break;
+        case 'clear':
+          command += ' clear';
+          break;
+      }
+      
+      const { stdout } = await execAsync(command, { cwd: this.workingDir });
+      return { output: stdout };
+    } catch (error) {
+      throw new Error(`Git stash ${options.action} failed: ${error}`);
+    }
+  }
+
+  // Tag 고급 관리
+  async tagAdvanced(options: {
+    action: 'list' | 'create' | 'delete' | 'push';
+    name?: string;
+    message?: string;
+    commit?: string;
+    force?: boolean;
+  }): Promise<{ output: string }> {
+    try {
+      let command = 'git tag';
+      
+      switch (options.action) {
+        case 'list':
+          // Default behavior
+          break;
+        case 'create':
+          if (options.message) {
+            command += ` -a ${options.name} -m "${options.message}"`;
+          } else {
+            command += ` ${options.name}`;
+          }
+          if (options.commit) command += ` ${options.commit}`;
+          if (options.force) command = command.replace('git tag', 'git tag -f');
+          break;
+        case 'delete':
+          command += ` -d ${options.name}`;
+          break;
+        case 'push':
+          command = `git push origin ${options.name}`;
+          if (options.force) command += ' --force';
+          break;
+      }
+      
+      const { stdout } = await execAsync(command, { cwd: this.workingDir });
+      return { output: stdout };
+    } catch (error) {
+      throw new Error(`Git tag ${options.action} failed: ${error}`);
+    }
+  }
+
+  // Merge 고급 기능 (오버로드된 버전)
+  async mergeAdvanced(options: {
+    branch: string;
+    strategy?: 'recursive' | 'ours' | 'theirs' | 'octopus';
+    noFastForward?: boolean;
+    message?: string;
+  }): Promise<{ success: boolean; error?: string }> {
+    try {
+      let command = 'git merge';
+      
+      if (options.strategy) {
+        command += ` -s ${options.strategy}`;
+      }
+      if (options.noFastForward) {
+        command += ' --no-ff';
+      }
+      if (options.message) {
+        command += ` -m "${options.message}"`;
+      }
+      command += ` ${options.branch}`;
+      
+      await execAsync(command, { cwd: this.workingDir });
+      return { success: true };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : String(error) 
+      };
+    }
+  }
+
+  // Rebase 고급 기능 (오버로드된 버전)
+  async rebaseAdvanced(options: {
+    branch: string;
+    interactive?: boolean;
+  }): Promise<{ output: string }> {
+    try {
+      let command = 'git rebase';
+      if (options.interactive) command += ' -i';
+      command += ` ${options.branch}`;
+      
+      const { stdout } = await execAsync(command, { cwd: this.workingDir });
+      return { output: stdout };
+    } catch (error) {
+      throw new Error(`Git rebase failed: ${error}`);
+    }
+  }
+
+  async rebaseAbort(): Promise<{ output: string }> {
+    try {
+      const { stdout } = await execAsync('git rebase --abort', { cwd: this.workingDir });
+      return { output: stdout };
+    } catch (error) {
+      throw new Error(`Git rebase abort failed: ${error}`);
+    }
+  }
+
+  async rebaseContinue(): Promise<{ output: string }> {
+    try {
+      const { stdout } = await execAsync('git rebase --continue', { cwd: this.workingDir });
+      return { output: stdout };
+    } catch (error) {
+      throw new Error(`Git rebase continue failed: ${error}`);
+    }
+  }
+
+  // Diff 고급 기능 (오버로드된 버전)
+  async diffAdvanced(options: {
+    target?: string;
+    cached?: boolean;
+    nameOnly?: boolean;
+    stat?: boolean;
+  }): Promise<{ output: string }> {
+    try {
+      let command = 'git diff';
+      
+      if (options.cached) command += ' --cached';
+      if (options.nameOnly) command += ' --name-only';
+      if (options.stat) command += ' --stat';
+      if (options.target) command += ` ${options.target}`;
+      
+      const { stdout } = await execAsync(command, { cwd: this.workingDir });
+      return { output: stdout };
+    } catch (error) {
+      throw new Error(`Git diff failed: ${error}`);
+    }
+  }
+
+  // Reset 기능
+  async reset(options: {
+    target?: string;
+    mode?: 'soft' | 'mixed' | 'hard';
+    files?: string[];
+  }): Promise<{ success: boolean; error?: string }> {
+    try {
+      let command = 'git reset';
+      
+      if (options.mode) {
+        command += ` --${options.mode}`;
+      }
+      if (options.target) {
+        command += ` ${options.target}`;
+      }
+      if (options.files && options.files.length > 0) {
+        command += ` -- ${options.files.join(' ')}`;
+      }
+      
+      await execAsync(command, { cwd: this.workingDir });
+      return { success: true };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : String(error) 
+      };
+    }
+  }
+
+  // Cherry-pick 기능
+  async cherryPick(options: {
+    commits: string[];
+    noCommit?: boolean;
+  }): Promise<{ success: boolean; error?: string }> {
+    try {
+      let command = 'git cherry-pick';
+      
+      if (options.noCommit) {
+        command += ' -n';
+      }
+      command += ` ${options.commits.join(' ')}`;
+      
+      await execAsync(command, { cwd: this.workingDir });
+      return { success: true };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : String(error) 
+      };
     }
   }
 }

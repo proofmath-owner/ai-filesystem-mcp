@@ -1,0 +1,7 @@
+apiVersion: 1
+providers:
+- name: MCP Dashboards
+  type: file
+  folder: MCP
+  options:
+    path: /etc/grafana/provisioning/dashboards

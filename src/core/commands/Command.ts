@@ -3,6 +3,7 @@ import { Tool } from '@modelcontextprotocol/sdk/types.js';
 export interface CommandContext {
   args: Record<string, any>;
   fsManager: any; // FileSystemManager 타입은 나중에 import
+  serviceManager?: any; // ServiceManager for new services
 }
 
 export interface CommandResult {
