@@ -140,7 +140,7 @@ export class AdvancedSearchManager {
   }
 
   // 퍼지 검색 (유사 파일명)
-  async fuzzySearch(pattern: string, directory: string, threshold: number = 0.7): Promise<SearchResult[]> {
+  async fuzzySearch(pattern: string, directory: string, threshold: number = 0.3): Promise<SearchResult[]> {
     const results: SearchResult[] = [];
     const startTime = Date.now();
     const MAX_DURATION = 5000; // 5초 제한

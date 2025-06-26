@@ -270,7 +270,7 @@ export class SearchService implements ISearchService {
       const result = await this.searchManager.fuzzySearch(
         query, 
         directory, 
-        options?.fuzzyThreshold || 0.6
+        options?.fuzzyThreshold || 0.3
       );
       
       // Limit results if needed

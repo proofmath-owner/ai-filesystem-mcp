@@ -22,7 +22,7 @@ export class FuzzySearchCommand extends BaseCommand {
         description: 'Matching threshold (0-1)',
         minimum: 0,
         maximum: 1,
-        default: 0.6
+        default: 0.3
       },
       limit: {
         type: 'number' as const,
@@ -72,7 +72,7 @@ export class FuzzySearchCommand extends BaseCommand {
         context.args.pattern,
         context.args.directory || '.',
         {
-          threshold: context.args.threshold || 0.6,
+          threshold: context.args.threshold || 0.3,
           limit: context.args.limit || 20,
           extensions: context.args.extensions
         }

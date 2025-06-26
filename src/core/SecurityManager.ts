@@ -48,9 +48,9 @@ export class SecurityManager {
     },
     {
       name: 'AWS Secret Key',
-      pattern: /[0-9a-zA-Z/+=]{40}/g,
+      pattern: /(?:aws_secret_access_key|aws.secret.key|secret.access.key)\s*[:=]\s*["']?[0-9a-zA-Z/+=]{40}["']?|(?:^|[^a-zA-Z0-9])[0-9a-zA-Z/+=]{40}(?=\s*$|[^a-zA-Z0-9])/g,
       severity: 'critical',
-      description: 'Possible AWS Secret Access Key'
+      description: 'AWS Secret Access Key'
     },
     {
       name: 'API Key',
@@ -258,6 +258,16 @@ export class SecurityManager {
             const matches = [...line.matchAll(pattern.pattern)];
             
             matches.forEach(match => {
+              // 화이트리스트 체크
+              if (this.isWhitelisted(match[0], line)) {
+                return;
+              }
+              
+              // 파일 경로 필터링 (import 문, require 문 등)
+              if (this.isFilePathContext(line)) {
+                return;
+              }
+              
               // 일부 내용 마스킹
               const masked = this.maskSecret(match[0]);
               
@@ -427,9 +437,31 @@ ${recommendations.map((r, i) => `${i + 1}. ${r}`).join('\n')}
       /sample/i,
       /placeholder/i,
       /xxxx/i,
-      /\*{4,}/
+      /\*{4,}/,
+      /fake/i,
+      /dummy/i,
+      /mock/i
     ];
 
     return whitelist.some(pattern => pattern.test(match) || pattern.test(context));
+  }
+
+  // 파일 경로 컨텍스트 체크
+  private isFilePathContext(line: string): boolean {
+    const filePathPatterns = [
+      /^\s*import\s+/i,
+      /^\s*require\s*\(/i,
+      /^\s*from\s+["']/i,
+      /\.tsx?["']/i,
+      /\.jsx?["']/i,
+      /\.vue["']/i,
+      /src\/[a-zA-Z0-9/_-]+/,
+      /tests?\/[a-zA-Z0-9/_-]+/,
+      /node_modules/i,
+      /\/\/ @ts-/i,
+      /\/\* eslint/i
+    ];
+
+    return filePathPatterns.some(pattern => pattern.test(line.trim()));
   }
 }
