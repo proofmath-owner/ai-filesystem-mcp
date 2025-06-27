@@ -4,36 +4,37 @@ import { SearchService } from '../../../core/services/search/SearchService.js';
 
 export class FuzzySearchCommand extends BaseCommand {
   readonly name = 'fuzzy_search';
-  readonly description = 'Search for files using fuzzy matching';
+  readonly description = 'Search for files using fuzzy matching algorithm. Finds files with similar names even with typos or partial matches';
   readonly inputSchema = {
     type: 'object' as const,
     properties: {
       pattern: {
         type: 'string' as const,
-        description: 'Search pattern'
+        description: 'Search pattern for fuzzy matching. Examples: "test" finds "testfile.txt", "src/util" finds "src/utilities.js"'
       },
       directory: {
         type: 'string' as const,
-        description: 'Directory to search in',
+        description: 'Directory to search in (absolute or relative path). Default: current directory (".")',
         default: '.'
       },
       threshold: {
         type: 'number' as const,
-        description: 'Matching threshold (0-1)',
+        description: 'Similarity threshold (0-1). Lower = more matches. 0.9 = high similarity, 0.5 = moderate, 0.3 = loose matching (default)',
         minimum: 0,
         maximum: 1,
         default: 0.3
       },
       limit: {
         type: 'number' as const,
-        description: 'Maximum number of results',
+        description: 'Maximum number of results to return (1-1000). Higher values may impact performance',
         minimum: 1,
+        maximum: 1000,
         default: 20
       },
       extensions: {
         type: 'array' as const,
         items: { type: 'string' as const },
-        description: 'File extensions to filter by'
+        description: 'Filter results by file extensions. Examples: [".js", ".ts"] or ["js", "ts"] (dots optional)'
       }
     },
     required: ['pattern']

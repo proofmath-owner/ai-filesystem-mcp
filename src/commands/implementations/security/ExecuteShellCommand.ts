@@ -4,22 +4,22 @@ import { IShellService } from '../../../core/interfaces/IShellService.js';
 
 export class ExecuteShellCommand extends BaseCommand {
   readonly name = 'execute_shell';
-  readonly description = 'Execute shell commands with security controls';
+  readonly description = '⚠️ Execute shell commands with security validation. Use with caution - only for trusted operations';
   readonly inputSchema = {
     type: 'object' as const,
     properties: {
       command: {
         type: 'string' as const,
-        description: 'Command to execute'
+        description: 'Shell command to execute. Examples: "ls -la", "git status", "npm test". Avoid: rm, sudo, system modifications'
       },
       args: {
         type: 'array' as const,
         items: { type: 'string' as const },
-        description: 'Command arguments (optional)'
+        description: 'Command arguments as separate array items. Examples: ["status", "--porcelain"] for git. Safer than embedding in command string'
       },
       cwd: {
         type: 'string' as const,
-        description: 'Working directory (optional)'
+        description: 'Working directory for command execution (absolute or relative path). Defaults to current directory'
       },
       env: {
         type: 'object' as const,
@@ -28,11 +28,14 @@ export class ExecuteShellCommand extends BaseCommand {
       },
       timeout: {
         type: 'number' as const,
-        description: 'Timeout in milliseconds (default: 30000)'
+        description: 'Command timeout in milliseconds. Default: 30000 (30s). Max: 300000 (5min). Use shorter timeouts for safety',
+        default: 30000,
+        maximum: 300000
       },
       shell: {
         type: 'boolean' as const,
-        description: 'Use shell to execute command (default: false)'
+        description: 'Execute via shell (enables pipes, redirects). Default: false for security. Only enable if needed for shell features',
+        default: false
       },
       encoding: {
         type: 'string' as const,

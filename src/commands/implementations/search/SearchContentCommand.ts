@@ -4,15 +4,21 @@ import { ISearchService } from '../../../core/interfaces/ISearchService.js';
 
 export class SearchContentCommand extends BaseCommand {
   readonly name = 'search_content';
-  readonly description = 'Search for content within files';
+  readonly description = 'Search for text content within files. Supports both plain text and regular expressions';
   readonly inputSchema = {
     type: 'object' as const,
     properties: {
-      pattern: { type: 'string' as const, description: 'Text or regex pattern to search' },
-      directory: { type: 'string' as const, description: 'Directory to search in' },
+      pattern: { 
+        type: 'string' as const, 
+        description: 'Text or regex pattern to search. Examples: "TODO", "function\\s+\\w+", "console\\.log" (escape special chars)' 
+      },
+      directory: { 
+        type: 'string' as const, 
+        description: 'Directory to search in (absolute or relative path). Searches recursively through all subdirectories' 
+      },
       filePattern: { 
         type: 'string' as const, 
-        description: 'File pattern to include (e.g., *.ts)',
+        description: 'Glob pattern for files to include. Examples: "*.js", "src/**/*.ts", "**/*.{js,ts}" (default: all files)',
         default: '**/*'
       }
     },

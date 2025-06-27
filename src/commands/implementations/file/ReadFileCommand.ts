@@ -8,7 +8,10 @@ export class ReadFileCommand extends BaseCommand {
   readonly inputSchema = {
     type: 'object' as const,
     properties: {
-      path: { type: 'string' as const, description: 'File path to read' }
+      path: { 
+        type: 'string' as const, 
+        description: 'File path to read (absolute or relative). Supports UTF-8 encoding. Performance optimal for files under 100MB' 
+      }
     },
     required: ['path']
   };

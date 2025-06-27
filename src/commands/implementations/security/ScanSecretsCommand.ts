@@ -4,11 +4,14 @@ import { ISecurityService } from '../../../core/interfaces/ISecurityService.js';
 
 export class ScanSecretsCommand extends BaseCommand {
   readonly name = 'scan_secrets';
-  readonly description = 'Scan directory for hardcoded secrets and sensitive data';
+  readonly description = 'Scan directory for hardcoded secrets, API keys, passwords, and sensitive data. Detects AWS keys, tokens, credentials';
   readonly inputSchema = {
     type: 'object' as const,
     properties: {
-      directory: { type: 'string' as const, description: 'Directory to scan' }
+      directory: { 
+        type: 'string' as const, 
+        description: 'Directory to scan recursively (absolute or relative path). Excludes node_modules, .git, dist by default' 
+      }
     },
     required: ['directory']
   };

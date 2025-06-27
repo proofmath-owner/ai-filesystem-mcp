@@ -4,12 +4,18 @@ import { IFileService } from '../../../core/interfaces/IFileService.js';
 
 export class WriteFileCommand extends BaseCommand {
   readonly name = 'write_file';
-  readonly description = 'Write content to a file';
+  readonly description = 'Write content to a file. Creates directories if needed, overwrites existing files';
   readonly inputSchema = {
     type: 'object' as const,
     properties: {
-      path: { type: 'string' as const, description: 'File path to write' },
-      content: { type: 'string' as const, description: 'Content to write' }
+      path: { 
+        type: 'string' as const, 
+        description: 'File path to write (absolute or relative). Parent directories will be created automatically' 
+      },
+      content: { 
+        type: 'string' as const, 
+        description: 'Content to write to file. Use \\n for newlines, \\t for tabs. UTF-8 encoding used' 
+      }
     },
     required: ['path', 'content']
   };
