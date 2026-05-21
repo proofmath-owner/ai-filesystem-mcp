@@ -47,7 +47,7 @@
     "rollback",
     "ai-agent"
   ],
-  "author": "sangbin Na",
+  "author": "Sangbin Na",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0"
