@@ -77,12 +77,8 @@ export class SecretScanner {
       pattern: /sk_live_[0-9a-zA-Z]{24,}/g,
       severity: 'critical'
     },
-    // Environment Variables
-    {
-      name: 'Environment Variable',
-      pattern: /process\.env\.[A-Z_]+/g,
-      severity: 'low'
-    }
+    // 주: `process.env.X` 참조 자체는 비밀이 아니므로 패턴에서 제외 (false positive 발생기).
+    //   값이 하드코딩된 사례는 위의 "Generic API Key" / "Password in code" 등으로 잡힘.
   ];
 
   async scanDirectory(directory: string): Promise<SecretMatch[]> {

@@ -42,26 +42,24 @@ export class CommandRegistry {
     if (!command) {
       throw new Error(`Command not found: ${name}`);
     }
-    
+
     const result = await command.execute(context);
-    
-    // Convert our CommandResult to MCP format
-    if (!result.isError) {
-      // For successful results, format the data appropriately
-      if (typeof result.content?.[0]?.text || JSON.stringify(result.content) === 'string') {
-        return {
-          content: [{ type: 'text', text: result.content?.[0]?.text || JSON.stringify(result.content) }]
-        };
-      } else {
-        // For objects/arrays, convert to JSON string
-        return {
-          content: [{ type: 'text', text: JSON.stringify(result.content?.[0]?.text || JSON.stringify(result.content), null, 2) }]
-        };
-      }
-    } else {
-      // For errors, throw to let the error handler deal with it
+
+    if (result.isError) {
       throw new Error(result.error || 'Unknown error');
     }
+
+    // BaseCommand.formatResult 가 이미 {content:[{type:'text', text:string}]} 형태를 반환.
+    // text가 비문자열이면 안전하게 JSON 문자열로 강제.
+    const first = result.content?.[0];
+    const text =
+      typeof first?.text === 'string'
+        ? first.text
+        : JSON.stringify(first?.text ?? result.content ?? '', null, 2);
+
+    return {
+      content: [{ type: 'text', text }],
+    };
   }
 
   get size(): number {

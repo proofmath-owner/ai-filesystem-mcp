@@ -5,12 +5,52 @@ All notable changes to AI FileSystem MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [3.0.0] - 2026-05-21
+
+### BREAKING
+
+This is a focused rewrite around what modern coding agents (Claude Code,
+Codex CLI, …) cannot trivially do themselves. The ~39-command surface from
+2.x is gone — your agent already has built-in tools for file I/O, search,
+git, code analysis, shell execution, archives, diffs, and metadata. Use them.
+
+Removed commands (use your agent's built-ins instead):
+`read_file`, `read_files`, `write_file`, `update_file`, `move_file`,
+`create_directory`, `list_directory`, `remove_directory`,
+`search_files`, `search_content`, `fuzzy_search`, `semantic_search`,
+`analyze_code`, `modify_code`, `format_code`, `suggest_refactoring`,
+`execute_shell`, `shell`, `diff_files`, `compress_files`, `extract_archive`,
+`get_file_metadata`, `change_permissions`, `batch_operations`,
+all `git_*` / `github_*` commands.
+
+Kept (the things agents can't easily do):
+- `transaction` — atomic multi-file ops with rollback
+- `file_watcher` — chokidar watcher that survives across MCP turns
+- `scan_secrets`, `security_audit`
+- `encrypt_file`, `decrypt_file`
 
 ### Added
-- Community feedback system with multiple channels
-- Comprehensive monitoring dashboard infrastructure
-- Production-ready deployment configurations
+- Encryption file format v1 with magic + version + algo/KDF id + iteration
+  count header. Future format changes stay decryptable.
+- PBKDF2-SHA256 iterations raised to 600 000 (OWASP 2023+ guidance).
+- GCM IV reduced to 12 bytes (NIST SP 800-38D recommendation).
+- Option-injection guards for any user-supplied refs / urls / remote names.
+- Build now fails on TypeScript errors (no more `tsc || true`).
+
+### Fixed
+- `CommandRegistry.execute()` had a `typeof X` always-truthy branch that
+  short-circuited result formatting.
+- `EnhancedShellExecutionService` used `require('fs')` in an ESM module.
+- `setSecurityLevel()` global mutation on a singleton service is gone with
+  the shell command itself.
+- `SecretScanner` no longer flags every `process.env.X` reference.
+- Removed dead `core/commands/`, `services/impl/`, `legacy/`, `index-new.ts`,
+  and 20+ root-level `fix-*` / `phase1-*` / `quick-*` migration scripts.
+
+### Security
+- Replaced `child_process.exec` with `execFile` and array args (no longer
+  applicable to shipped code now that git/shell commands are removed, but
+  the pattern is documented for future contributions).
 
 ## [2.0.0] - 2024-01-15
 
@@ -206,8 +246,8 @@ For major version upgrades, detailed migration guides are provided:
 
 ## Support
 
-- **Current Version**: v2.0.0 (Full support)
-- **Previous Version**: v1.x.x (Security fixes only)
-- **End of Life**: v0.x.x (No longer supported)
+- **Current Version**: v3.0.0 (Full support)
+- **Previous Version**: v2.x.x (Security fixes only)
+- **End of Life**: v1.x.x and earlier (No longer supported)
 
 For questions about releases, please see our [FAQ](./docs/FAQ.md) or create an issue on GitHub.

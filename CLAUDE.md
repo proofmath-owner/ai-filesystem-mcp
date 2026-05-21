@@ -1,221 +1,81 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code when working **inside this repo**.
 
-## Repository Overview
+## What this repo is
 
-This is an AI-optimized Model Context Protocol (MCP) server for intelligent file system operations. The project provides a TypeScript/Node.js implementation with 39+ commands for file manipulation, code analysis, Git operations, security scanning, and shell execution.
+An MCP (Model Context Protocol) server that exposes **6 tools** focused on
+things modern coding agents (you) cannot do well on your own. It is NOT a
+generic file/git/shell toolbox — those overlap with your built-in Read / Edit
+/ Grep / Bash and were intentionally removed in 3.0.
 
-## Development Commands
+## Tools the server exposes (do not duplicate these in code)
 
-### TypeScript/Node.js Commands
+- `transaction` — atomic multi-file write/update/move/delete/create with
+  automatic rollback on failure.
+- `file_watcher` — chokidar-backed watcher that survives across MCP turns
+  (start / stop / status / recent events).
+- `scan_secrets`, `security_audit` — pattern-based secret detection (AWS,
+  GitHub, Slack, Stripe, JWT, RSA/SSH, DB URLs, generic API keys).
+- `encrypt_file`, `decrypt_file` — AES-256-GCM with PBKDF2-SHA256 (600k
+  iters), 12-byte IV, versioned file header. Legacy (pre-header, 100k iters)
+  blobs are still decryptable.
+
+## Architecture
+
+```
+src/index.ts                    MCP stdio server entry
+  └── core/ServiceContainer.ts  Minimal DI: 3 services
+        ├── SecurityService     (uses SecretScanner + EncryptionService)
+        ├── TransactionService
+        └── FileWatcherService
+src/commands/registry/          BaseCommand / CommandRegistry / CommandLoader
+src/commands/implementations/   6 command classes (one per tool)
+```
+
+Total source: ~22 `.ts` files. Keep it that way unless adding a new tool that
+clearly does not overlap with agent built-ins.
+
+## Conventions
+
+- Every command extends `BaseCommand` (`src/commands/base/BaseCommand.ts`),
+  implements `validateArgs()` / `executeCommand()`, and registers itself in
+  `CommandLoader.loadCommands()`.
+- Services are pulled from the container via
+  `context.container.getService<T>('serviceName')`.
+- Error path: throw inside `executeCommand`; `BaseCommand.execute` catches and
+  formats as a structured error result.
+- No `child_process.exec` with string interpolation. Anywhere shell is needed
+  in the future, use `execFile` (or `execa`) with array args.
+- TS is strict-friendly. `npm run build` invokes plain `tsc` — do not
+  re-introduce `tsc || true`.
+
+## Commands
+
 ```bash
-# Setup and build
-npm install          # Install dependencies
-npm run build        # Compile TypeScript
-npm run clean        # Clean dist directory
-
-# Development
-npm run dev          # Development mode with tsx watch
-npm run start        # Start built server
-npm run format       # Prettier formatting
-npm run lint         # ESLint validation
-
-# Testing
-npm test             # Run basic integration tests
-npm run test:jest    # Run Jest test suite
-npm run test:unit    # Unit tests only
-npm run test:integration  # Integration tests only
-npm run test:coverage     # Test with coverage
-npm run test:watch   # Watch mode
-npm run test:all     # Run all 39 command tests
-
-# Specialized tests
-npm run test:git     # Git operations
-npm run test:shell   # Shell execution
-npm run test:metadata  # Metadata commands
-npm run test:transaction  # Transaction operations
-npm run test:phase1  # Phase 1 validation
-
-# Build validation
-npm run build:check  # Check build status
-npm run build:diagnose  # Diagnose build issues
-npm run validate:phase1  # Validate Phase 1 completion
+npm install
+npm run dev      # tsx watch on src/index.ts
+npm run build    # tsc -> dist/
+npm run start    # node dist/index.js
+npm run lint
+npm run format
 ```
 
-### MCP Server Testing
-```bash
-# Test with MCP inspector (preferred)
-npx @modelcontextprotocol/inspector npm run dev
+There is no test suite right now (the legacy Jest tests were tied to the
+removed 39-tool surface). Adding focused tests for the 6 remaining tools is
+a good follow-up.
 
-# Direct server execution
-npm run start
+## What NOT to do
 
-# Run specific test suites
-node tests/integration/test-all-39.js    # All commands
-node tests/integration/test-git.js       # Git operations
-node tests/integration/test-shell-execution.js  # Shell commands
-```
+- Do not add `read_file` / `write_file` / `search_files` / `execute_shell` /
+  `git_*` style tools. The agent already has them.
+- Do not pull in babel/AST parsers, archive libs, `natural`, or `command-exists`.
+  Those were removed with the categories they served.
+- Do not advertise streaming / worker pools / "100x event-based watching"
+  unless they are actually implemented.
 
-## Architecture Overview
+## Security posture
 
-### Core Architecture Pattern: Command Pattern + Service Container
-
-The project follows a **Command Pattern** architecture with **Dependency Injection** through a Service Container:
-
-```
-src/index.ts (MCP Server)
-    ↓
-ServiceContainer.ts (DI Container)
-    ↓
-CommandRegistry.ts (Command Router)
-    ↓
-Command.ts (Base Command Class)
-    ↓ 
-[39 Command Implementations]
-```
-
-### Key Architectural Components
-
-#### 1. **Service Container Pattern** (`src/core/ServiceContainer.ts`)
-- Centralized dependency injection container
-- Manages all services and their lifecycle
-- Provides services to commands through dependency injection
-- Handles cleanup and resource management
-
-#### 2. **Command Pattern** (`src/core/commands/`)
-All 39 commands implement the base `Command` class with:
-- **Validation**: `validateArgs()` with type checking helpers
-- **Execution**: `executeCommand()` with error handling
-- **Tool Schema**: MCP tool definition with JSON schema
-- **Categories**: Organized into logical folders (file/, git/, security/, etc.)
-
-#### 3. **Service Layer Architecture**
-Services are organized by domain:
-- **File Services**: FileService, DirectoryService, FileOperations, FileCache
-- **Search Services**: SearchService, ContentSearcher, FuzzySearcher, SemanticSearcher  
-- **Git Services**: GitService, GitOperations, GitHubIntegration
-- **Code Services**: CodeAnalysisService, ASTProcessor, RefactoringEngine
-- **Security Services**: SecurityService, EncryptionService, SecretScanner, ShellExecutionService
-- **Utility Services**: DiffService, CompressionService, BatchService, TransactionService
-
-#### 4. **Security Model**
-Multi-level security system for shell execution:
-- **Strict**: Very restrictive (production)
-- **Moderate**: Development-friendly (default)
-- **Permissive**: Minimal restrictions
-
-### Command Categories (39 Total)
-
-1. **File Operations** (8): read_file, write_file, read_files, move_file, etc.
-2. **Directory Operations** (3): create_directory, list_directory, remove_directory
-3. **Search Operations** (4): search_files, search_content, fuzzy_search, semantic_search
-4. **Git Operations** (10): git_init, git_add, git_commit, git_push, git_pull, etc.
-5. **Code Analysis** (4): analyze_code, modify_code, suggest_refactoring, format_code
-6. **Security Operations** (5): encrypt_file, decrypt_file, scan_secrets, security_audit, execute_shell
-7. **Utility Operations** (5): diff_files, compress_files, extract_archive, get_file_metadata, change_permissions
-
-### Project Structure
-```
-src/
-├── index.ts                    # MCP server entry point
-├── core/
-│   ├── ServiceContainer.ts     # DI container
-│   ├── commands/
-│   │   ├── Command.ts          # Base command class
-│   │   ├── CommandRegistry.ts  # Command router
-│   │   ├── file/              # File operations (8 commands)
-│   │   ├── directory/         # Directory operations (3 commands)
-│   │   ├── search/            # Search operations (4 commands)
-│   │   ├── git/               # Git operations (10 commands)
-│   │   ├── code/              # Code analysis (4 commands)
-│   │   ├── security/          # Security operations (5 commands)
-│   │   └── utils/             # Utility operations (5 commands)
-│   └── services/              # Service layer
-└── tests/                     # Test suites
-```
-
-## Development Patterns
-
-### Adding New Commands
-1. **Create Command Class**: Extend base `Command` class
-2. **Implement Required Methods**: `validateArgs()`, `executeCommand()`, define schema
-3. **Add to Registry**: Register in `CommandLoader.ts`
-4. **Add Tests**: Create integration test
-5. **Update Documentation**: Add to README command list
-
-### Service Integration
-Commands receive services through the ServiceContainer:
-```typescript
-async executeCommand(context: CommandContext): Promise<CommandResult> {
-  const fileService = context.container.getService<FileService>('fileService');
-  const result = await fileService.readFile(path);
-  return { content: [{ type: 'text', text: result }] };
-}
-```
-
-### Error Handling
-- All commands have built-in try-catch error handling
-- Services throw descriptive errors
-- Security validation occurs at multiple levels
-- Commands return standardized error format
-
-## Important Files
-
-### Configuration
-- `package.json`: Scripts, dependencies, and project metadata
-- `tsconfig.json`: TypeScript configuration (ES2022, NodeNext modules)
-- `jest.config.ts`: Jest testing configuration with 80% coverage threshold
-
-### Core Implementation
-- `src/index.ts:87`: Main server initialization
-- `src/core/ServiceContainer.ts:54`: Service container initialization
-- `src/core/commands/CommandRegistry.ts:47`: Command execution logic
-
-### Development Scripts
-The project includes extensive development automation:
-- Build validation scripts in `scripts/`
-- Debug utilities for troubleshooting
-- Phase validation for migration progress
-
-## Testing Strategy
-
-### Test Organization
-- **Unit Tests**: Individual service and command testing
-- **Integration Tests**: End-to-end command testing  
-- **Phase Tests**: Migration validation
-- **Coverage Tests**: 80% minimum coverage requirement
-
-### Key Test Files
-- `tests/integration/test-all-39.js`: Validates all 39 commands
-- `tests/integration/test-git.js`: Git operation validation
-- `tests/integration/test-shell-execution.js`: Shell security testing
-
-## Performance Considerations
-
-### Current Optimizations
-- **LRU Caching**: File content caching with configurable TTL
-- **Streaming**: Large file handling with stream processing
-- **Batch Operations**: Bulk file operations with transaction support
-- **Parallel Processing**: Worker threads for CPU-intensive tasks
-
-### Future Optimizations (Phase 3)
-- Event-based file watching (100x latency improvement)
-- Advanced stream processing (20x memory efficiency)  
-- Enhanced worker thread pools (6x speed improvement)
-
-## Security Best Practices
-
-### Built-in Security Features
-- **Multi-level Shell Security**: Configurable execution permissions
-- **Secret Scanning**: Automatic credential detection
-- **File Encryption**: AES-256 encryption support
-- **Permission Validation**: Safe file system operations
-- **Input Sanitization**: Command argument validation
-
-### Security Guidelines
-- Always validate file paths before operations
-- Use appropriate security level for shell operations
-- Scan for secrets before committing code
-- Encrypt sensitive files when appropriate
-- Follow least-privilege principle for file permissions
+Local trusted-agent only. No path sandboxing, no command allowlist — the trust
+boundary is the user's machine. Anything that needs to run server-to-untrusted
+clients would be a separate project.

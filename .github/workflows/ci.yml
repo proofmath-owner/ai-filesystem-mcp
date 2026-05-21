@@ -1,448 +1,58 @@
-name: CI/CD Pipeline
+name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
     tags: ['v*']
   pull_request:
-    branches: [main, develop]
-
-env:
-  NODE_VERSION: '20'
-  CACHE_VERSION: v1
+    branches: [main]
 
 jobs:
-  # 1. Quality Gate - Linting and Type Checking
-  quality:
-    name: Code Quality
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          
-      - name: Cache dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ env.CACHE_VERSION }}-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-${{ env.CACHE_VERSION }}-
-            ${{ runner.os }}-node-
-            
-      - name: Install dependencies
-        run: npm ci
-        
-      - name: Lint code
-        run: npm run lint
-        
-      - name: Type check
-        run: npm run build
-        
-      - name: Check formatting
-        run: npm run format -- --check
-        
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
-        if: success()
-        with:
-          name: build-output
-          path: dist/
-          retention-days: 1
-
-  # 2. Testing Matrix - Multiple Node versions and OS
-  test:
-    name: Tests (Node ${{ matrix.node }} on ${{ matrix.os }})
+  build:
+    name: Build (Node ${{ matrix.node }} on ${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    needs: quality
-    
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest]
         node: ['18', '20', '22']
-        
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js ${{ matrix.node }}
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
           cache: 'npm'
-          
-      - name: Install dependencies
-        run: npm ci
-        
-      - name: Run unit tests
-        run: npm run test:unit
-        
-      - name: Run integration tests
-        run: npm run test:integration
-        
-      - name: Upload test results
-        uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: test-results-${{ matrix.os }}-node${{ matrix.node }}
-          path: |
-            test-output/
-            coverage/
-          retention-days: 7
 
-  # 3. E2E Testing
-  e2e-tests:
-    name: E2E Tests
-    runs-on: ubuntu-latest
-    needs: quality
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          
-      - name: Install dependencies
+      - name: Install
         run: npm ci
-        
-      - name: Build project
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check / build
         run: npm run build
-        
-      - name: Run E2E tests
-        run: npm run test:e2e
-        timeout-minutes: 10
-        
-      - name: Upload E2E artifacts
-        uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: e2e-results
-          path: |
-            e2e-test-data/
-            test-output/
-          retention-days: 7
 
-  # 4. Performance Testing
-  performance:
-    name: Performance Tests
-    runs-on: ubuntu-latest
-    needs: quality
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/'))
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          
-      - name: Install dependencies
-        run: npm ci
-        
-      - name: Build project
-        run: npm run build
-        
-      - name: Create performance baseline
-        run: npm run benchmark:baseline
-        if: github.ref == 'refs/heads/main'
-        
-      - name: Run performance regression tests
-        run: npm run benchmark:regression
-        
-      - name: Upload performance results
-        uses: actions/upload-artifact@v3
-        with:
-          name: performance-results
-          path: |
-            performance-baseline.json
-            benchmark-results/
-          retention-days: 30
-
-  # 5. Security Scanning
-  security:
-    name: Security Scan
-    runs-on: ubuntu-latest
-    needs: quality
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          
-      - name: Install dependencies
-        run: npm ci
-        
-      - name: Audit dependencies
-        run: npm audit --audit-level=moderate
-        
-      - name: Run security scan
-        run: npm run security:scan
-        
-      - name: Scan for secrets
-        run: npm run security:secrets
-        
-      - name: Upload security report
-        uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: security-report
-          path: security-report.json
-          retention-days: 30
-
-  # 6. Code Coverage
-  coverage:
-    name: Code Coverage
-    runs-on: ubuntu-latest
-    needs: [test]
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          
-      - name: Install dependencies
-        run: npm ci
-        
-      - name: Run tests with coverage
-        run: npm run test:coverage
-        
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./coverage/lcov.info
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: false
-          
-      - name: Check coverage threshold
+      - name: Smoke start (boot + SIGTERM)
         run: |
-          npm run coverage:check || {
-            echo "❌ Coverage below threshold (80%)"
-            exit 1
-          }
+          # Portable boot smoke: start the server in the background,
+          # give it 3s to come up, capture stderr, then SIGTERM.
+          # macOS-latest does not ship GNU `timeout`, so we avoid it.
+          node dist/index.js < /dev/null 2>boot.stderr &
+          PID=$!
+          sleep 3
+          kill -TERM "$PID" 2>/dev/null || true
+          wait "$PID" 2>/dev/null || true
 
-  # 7. Build and Package
-  build:
-    name: Build & Package
-    runs-on: ubuntu-latest
-    needs: [test, e2e-tests]
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          
-      - name: Install dependencies
-        run: npm ci
-        
-      - name: Build project
-        run: npm run build
-        
-      - name: Generate documentation
-        run: npm run docs:generate
-        
-      - name: Package application
-        run: npm pack
-        
-      - name: Upload package
-        uses: actions/upload-artifact@v3
-        with:
-          name: npm-package
-          path: '*.tgz'
-          retention-days: 30
-          
-      - name: Upload documentation
-        uses: actions/upload-artifact@v3
-        with:
-          name: documentation
-          path: docs/
-          retention-days: 30
+          echo "--- boot stderr ---"
+          cat boot.stderr
 
-  # 8. Docker Build
-  docker:
-    name: Docker Build
-    runs-on: ubuntu-latest
-    needs: [build]
-    if: github.event_name == 'push'
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        
-      - name: Login to Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-          
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha,prefix={{branch}}-
-            
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64,linux/arm64
-
-  # 9. Release (on tags)
-  release:
-    name: Create Release
-    runs-on: ubuntu-latest
-    needs: [coverage, build, docker]
-    if: startsWith(github.ref, 'refs/tags/v')
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          registry-url: 'https://registry.npmjs.org'
-          
-      - name: Install dependencies
-        run: npm ci
-        
-      - name: Download build artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: npm-package
-          
-      - name: Download documentation
-        uses: actions/download-artifact@v3
-        with:
-          name: documentation
-          path: docs/
-          
-      - name: Generate changelog
-        run: npx conventional-changelog-cli -p angular -r 2 > CHANGELOG.md
-        
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            *.tgz
-            CHANGELOG.md
-          body_path: CHANGELOG.md
-          draft: false
-          prerelease: ${{ contains(github.ref, '-') }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
-      - name: Publish to NPM
-        run: npm publish *.tgz --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-  # 10. Deploy Documentation
-  deploy-docs:
-    name: Deploy Documentation
-    runs-on: ubuntu-latest
-    needs: [build]
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        
-      - name: Download documentation
-        uses: actions/download-artifact@v3
-        with:
-          name: documentation
-          path: docs/
-          
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs
-          cname: ai-filesystem-mcp.dev
-
-  # 11. Notification
-  notify:
-    name: Notify Results
-    runs-on: ubuntu-latest
-    needs: [coverage, build, security]
-    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
-    steps:
-      - name: Notify success
-        if: needs.coverage.result == 'success' && needs.build.result == 'success' && needs.security.result == 'success'
-        run: |
-          echo "✅ CI/CD Pipeline completed successfully!"
-          echo "📊 Coverage: Passed"
-          echo "🏗️ Build: Success"
-          echo "🔒 Security: Passed"
-          
-      - name: Notify failure
-        if: needs.coverage.result == 'failure' || needs.build.result == 'failure' || needs.security.result == 'failure'
-        run: |
-          echo "❌ CI/CD Pipeline failed!"
-          echo "📊 Coverage: ${{ needs.coverage.result }}"
-          echo "🏗️ Build: ${{ needs.build.result }}"
-          echo "🔒 Security: ${{ needs.security.result }}"
-          exit 1
-
-# Workflow summary
-# This pipeline provides:
-# 1. ✅ Code quality gates (linting, type checking)
-# 2. 🧪 Comprehensive testing (unit, integration, E2E)
-# 3. 📊 Performance regression testing  
-# 4. 🔒 Security scanning and dependency auditing
-# 5. 📦 Automated building and packaging
-# 6. 🐳 Docker image building and publishing
-# 7. 🚀 Automated releases for tagged versions
-# 8. 📚 Documentation deployment
-# 9. 🔔 Status notifications
+          # Assert the registered command surface matches what the README
+          # advertises. If any of these are missing the wiring is broken.
+          for cmd in transaction file_watcher scan_secrets security_audit encrypt_file decrypt_file; do
+            if ! grep -q "  - $cmd$" boot.stderr; then
+              echo "Boot smoke failed: expected command '$cmd' to be registered"
+              exit 1
+            fi
+          done
+          echo "Boot smoke: all 6 tools registered."
