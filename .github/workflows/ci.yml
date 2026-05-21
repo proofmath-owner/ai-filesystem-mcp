@@ -47,12 +47,14 @@ jobs:
           echo "--- boot stderr ---"
           cat boot.stderr
 
-          # Assert the registered command surface matches what the README
-          # advertises. If any of these are missing the wiring is broken.
-          for cmd in transaction file_watcher scan_secrets security_audit encrypt_file decrypt_file; do
-            if ! grep -q "  - $cmd$" boot.stderr; then
-              echo "Boot smoke failed: expected command '$cmd' to be registered"
-              exit 1
-            fi
-          done
-          echo "Boot smoke: all 6 tools registered."
+          # The product surface is exactly one tool. Anything more or less is
+          # a wiring regression.
+          if ! grep -q "  - transaction$" boot.stderr; then
+            echo "Boot smoke failed: expected 'transaction' to be registered"
+            exit 1
+          fi
+          if ! grep -q "Total commands: 1$" boot.stderr; then
+            echo "Boot smoke failed: expected exactly 1 registered command"
+            exit 1
+          fi
+          echo "Boot smoke: 1 tool (transaction) registered as expected."

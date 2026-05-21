@@ -13,7 +13,7 @@ import { ServiceContainer } from './core/ServiceContainer.js';
 const server = new Server(
   {
     name: 'ai-filesystem-mcp',
-    version: '3.0.0',
+    version: '4.0.0',
   },
   {
     capabilities: {
@@ -93,7 +93,7 @@ async function main() {
     await server.connect(transport);
     
     const registry = container.getCommandRegistry();
-    console.error(`ai-filesystem-mcp v3.0 started`);
+    console.error(`ai-filesystem-mcp v4.0 started`);
     console.error(`Total commands: ${registry.size}`);
     
     // List all commands for debugging

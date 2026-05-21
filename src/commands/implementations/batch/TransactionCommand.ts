@@ -1,161 +1,165 @@
 import { BaseCommand } from '../../base/BaseCommand.js';
 import { CommandResult, CommandContext } from '../../../core/interfaces/ICommand.js';
-import { TransactionService } from '../../../core/services/batch/TransactionService.js';
+import {
+  TransactionService,
+  TransactionOperation,
+} from '../../../core/services/batch/TransactionService.js';
 
-const TransactionOperationSchema = {
-    type: 'object',
-    properties: {
-      type: {
-        type: 'string',
-        enum: ['create', 'read', 'update', 'delete'],
-        description: 'Type of operation'
-      },
-      path: {
-        type: 'string',
-        description: 'File path for the operation'
-      },
-      content: {
-        type: 'string',
-        description: 'Content for create/update operations'
-      },
-      encoding: {
-        type: 'string',
-        description: 'File encoding',
-        default: 'utf8'
-      }
-    },
-    required: ['type', 'path']
-  };
-
-const TransactionArgsSchema = {
-    type: 'object',
-    properties: {
-      operations: {
-        type: 'array',
-        items: TransactionOperationSchema,
-        description: 'List of file operations to execute'
-      },
-      rollbackOnError: {
-        type: 'boolean',
-        description: 'Whether to rollback all operations if any fails',
-        default: true
-      }
-    },
-    required: ['operations']
-  };
-
+// Each op shape must stay in sync with TransactionService.executeOperation().
+// The op kinds are deliberately distinct:
+//   - create  : new file at path; requires content
+//   - write   : write (overwrite) file at existing path; requires content
+//   - update  : in-place text replacement; requires updates[]
+//   - move    : rename path -> destination
+//   - delete  : remove file or directory at path
+const OP_TYPES = ['create', 'write', 'update', 'move', 'delete'] as const;
+type OpType = (typeof OP_TYPES)[number];
 
 export class TransactionCommand extends BaseCommand {
   readonly name = 'transaction';
-  readonly description = 'Execute file operations in an atomic transaction';
+  readonly description =
+    'Apply a batch of file create/write/update/move/delete operations atomically. ' +
+    'If any operation fails (and rollbackOnError is true, the default), all prior ' +
+    'operations in the batch are reverted from on-disk backups. This is the one ' +
+    'thing the agent\'s built-in per-file Edit cannot do.';
+
   readonly inputSchema = {
     type: 'object',
     properties: {
       operations: {
         type: 'array',
+        minItems: 1,
         items: {
           type: 'object',
           properties: {
             type: {
               type: 'string',
-              enum: ['create', 'read', 'update', 'delete'],
-              description: 'Type of operation'
+              enum: [...OP_TYPES],
+              description:
+                'Operation kind. create=new file, write=overwrite, update=text replace, move=rename, delete=remove.',
             },
             path: {
               type: 'string',
-              description: 'File path for the operation'
+              description: 'Target file or directory path.',
             },
             content: {
               type: 'string',
-              description: 'Content for create/update operations'
+              description: 'Required for "create" and "write".',
             },
-            encoding: {
+            destination: {
               type: 'string',
-              description: 'File encoding',
-              default: 'utf8'
-            }
+              description: 'Required for "move" (new path).',
+            },
+            updates: {
+              type: 'array',
+              description:
+                'Required for "update". Each entry is { oldText, newText } and is applied in order via string replace.',
+              items: {
+                type: 'object',
+                properties: {
+                  oldText: { type: 'string' },
+                  newText: { type: 'string' },
+                },
+                required: ['oldText', 'newText'],
+                additionalProperties: false,
+              },
+            },
           },
-          required: ['type', 'path']
+          required: ['type', 'path'],
+          additionalProperties: false,
         },
-        description: 'List of file operations to execute'
+        description: 'Ordered list of file operations to execute as one atomic batch.',
       },
       rollbackOnError: {
         type: 'boolean',
-        description: 'Whether to rollback all operations if any fails',
-        default: true
-      }
+        description:
+          'When true (default), any failure rolls all completed ops in the batch back from backup.',
+        default: true,
+      },
     },
     required: ['operations'],
-    additionalProperties: false
+    additionalProperties: false,
   };
-
 
   protected validateArgs(args: Record<string, any>): void {
     if (!Array.isArray(args.operations)) {
       throw new Error('operations is required and must be an array');
     }
-    
     if (args.operations.length === 0) {
       throw new Error('operations array cannot be empty');
     }
-    
-    const validTypes = ['create', 'read', 'update', 'delete'];
-    
-    for (const [index, operation] of args.operations.entries()) {
-      if (!operation.type || typeof operation.type !== 'string') {
-        throw new Error(`Operation ${index}: type is required and must be a string`);
-      }
-      
-      if (!validTypes.includes(operation.type)) {
-        throw new Error(`Operation ${index}: type must be one of: ${validTypes.join(', ')}`);
-      }
-      
-      if (!operation.path || typeof operation.path !== 'string') {
-        throw new Error(`Operation ${index}: path is required and must be a string`);
-      }
-      
-      if (['create', 'update'].includes(operation.type) && typeof operation.content !== 'string') {
-        throw new Error(`Operation ${index}: content is required for ${operation.type} operations`);
-      }
-      
-      if (operation.encoding && typeof operation.encoding !== 'string') {
-        throw new Error(`Operation ${index}: encoding must be a string`);
-      }
-    }
-    
+
+    args.operations.forEach((op: any, i: number) => this.validateOp(op, i));
+
     if (args.rollbackOnError !== undefined && typeof args.rollbackOnError !== 'boolean') {
       throw new Error('rollbackOnError must be a boolean');
     }
   }
 
+  private validateOp(op: any, i: number): void {
+    if (typeof op?.type !== 'string') {
+      throw new Error(`operations[${i}]: "type" is required and must be a string`);
+    }
+    if (!(OP_TYPES as readonly string[]).includes(op.type)) {
+      throw new Error(`operations[${i}]: "type" must be one of: ${OP_TYPES.join(', ')}`);
+    }
+    if (typeof op.path !== 'string' || op.path.length === 0) {
+      throw new Error(`operations[${i}]: "path" is required and must be a non-empty string`);
+    }
+
+    const type = op.type as OpType;
+
+    if (type === 'create' || type === 'write') {
+      if (typeof op.content !== 'string') {
+        throw new Error(`operations[${i}] (${type}): "content" is required and must be a string`);
+      }
+    }
+
+    if (type === 'move') {
+      if (typeof op.destination !== 'string' || op.destination.length === 0) {
+        throw new Error(`operations[${i}] (move): "destination" is required and must be a string`);
+      }
+    }
+
+    if (type === 'update') {
+      if (!Array.isArray(op.updates) || op.updates.length === 0) {
+        throw new Error(
+          `operations[${i}] (update): "updates" is required and must be a non-empty array`,
+        );
+      }
+      op.updates.forEach((u: any, j: number) => {
+        if (typeof u?.oldText !== 'string' || typeof u?.newText !== 'string') {
+          throw new Error(
+            `operations[${i}].updates[${j}]: both "oldText" and "newText" are required strings`,
+          );
+        }
+      });
+    }
+  }
 
   protected async executeCommand(context: CommandContext): Promise<CommandResult> {
-    try {
-      const transactionService = context.container.getService<TransactionService>('transactionService');
-      const result = await transactionService.executeTransaction(
-        context.args.operations,
-        context.args.rollbackOnError
-      );
+    const transactionService = context.container.getService<TransactionService>('transactionService');
+    const operations = context.args.operations as TransactionOperation[];
+    const rollbackOnError =
+      context.args.rollbackOnError === undefined ? true : Boolean(context.args.rollbackOnError);
 
-      return {
-        content: [{
-          type: 'text',
-          text: JSON.stringify({
-            message: 'Transaction completed successfully',
+    try {
+      const result = await transactionService.executeTransaction(operations, rollbackOnError);
+
+      return this.formatResult(
+        JSON.stringify(
+          {
             transactionId: result.transactionId,
-            operations: result.operations.length,
             status: result.status,
-            completedAt: result.completedAt
-          }, null, 2)
-        }]
-      };
+            operations: result.operations.length,
+            completedAt: result.completedAt,
+          },
+          null,
+          2,
+        ),
+      );
     } catch (error) {
-      return {
-        content: [{
-          type: 'text',
-          text: `Transaction failed: ${error instanceof Error ? error.message : String(error)}`
-        }]
-      };
+      return this.formatError(error);
     }
   }
 }

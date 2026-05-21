@@ -5,6 +5,33 @@ All notable changes to AI FileSystem MCP will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0] - 2026-05-21
+
+### BREAKING
+
+Reduced to **one tool**: `transaction`. Everything else that 3.0 still
+shipped (`file_watcher`, `scan_secrets`, `security_audit`, `encrypt_file`,
+`decrypt_file`) was removed.
+
+The product positioning is now narrow on purpose: this server provides the
+**one** operation modern coding agents (Claude Code, Codex CLI, …) literally
+cannot replicate — atomic multi-file changes with rollback. Everything else
+those agents already do well, and a wrapper just adds latency.
+
+### Removed
+- `file_watcher`, `scan_secrets`, `security_audit`, `encrypt_file`,
+  `decrypt_file` and their backing services.
+- Runtime dependencies on `chokidar` and `glob`.
+
+### Changed
+- `TransactionCommand` schema and validator now match the
+  `TransactionService` operation set exactly: `create`, `write`, `update`
+  (with `updates[]`), `move` (with `destination`), `delete`. Previously the
+  schema advertised a non-existent `read` op and was missing `write` / `move`.
+- README and CLAUDE.md rewritten around the single-tool positioning.
+- CI boot smoke now asserts the registered command surface is exactly the
+  one expected tool.
+
 ## [3.0.0] - 2026-05-21
 
 ### BREAKING

@@ -1,24 +1,57 @@
 # ai-filesystem-mcp
 
-A focused [Model Context Protocol](https://modelcontextprotocol.io) server that
-exposes a small set of tools your AI agent (Claude Code, Codex CLI, …) cannot
-trivially do on its own.
+**Your AI agent's Edit isn't atomic. This MCP makes it so.**
 
-Modern coding agents already have great built-in file/search/edit/shell tools.
-This server intentionally does **not** re-implement those. It adds only the
-operations that benefit from a long-lived process, atomicity, or careful
-crypto.
+A single-tool MCP server for atomic multi-file changes with automatic
+rollback — built for Claude Code, Codex CLI, Cursor agents, and other modern
+coding agents.
 
-## Tools (6)
+Those agents ship with excellent built-in tools for reading, writing,
+searching, editing, and shell. They do not ship with a primitive for
+**"apply these N file operations as one transaction; if any of them fail,
+revert everything."** That is the one and only thing this MCP provides.
 
-| Tool | Why it exists |
-| --- | --- |
-| `transaction` | Apply a batch of file writes / updates / moves / deletes / creates **atomically**. Any failure rolls all of them back. The agent's per-file `Edit` is not transactional. |
-| `file_watcher` | A single tool with an `action` argument (`start` / `stop` / `status` / `events`) that keeps a chokidar watcher alive across agent turns. The agent's own session cannot host a persistent watcher. |
-| `scan_secrets` | Pattern-based secret scan (AWS, GitHub, Slack, Stripe, JWT, RSA/SSH keys, DB URLs, generic API keys) with severity scoring. |
-| `security_audit` | Higher-level scan over a directory. Wraps `scan_secrets` and produces a structured report. |
-| `encrypt_file` | AES-256-GCM with PBKDF2-SHA256 (600 000 iterations), 12-byte IV, 32-byte salt, versioned file header so future format upgrades stay decryptable. |
-| `decrypt_file` | Decrypts both the new v1 header format and the legacy (pre-header, 100 000-iteration) blobs produced by older versions of this server. |
+## The tool
+
+`transaction` — apply a batch of file operations atomically.
+
+```jsonc
+{
+  "name": "transaction",
+  "arguments": {
+    "operations": [
+      { "type": "create", "path": "src/feature.ts",  "content": "..." },
+      { "type": "write",  "path": "src/index.ts",    "content": "..." },
+      { "type": "update", "path": "src/lib/util.ts",
+        "updates": [{ "oldText": "foo()", "newText": "foo(arg)" }] },
+      { "type": "move",   "path": "src/old.ts", "destination": "src/legacy/old.ts" },
+      { "type": "delete", "path": "src/dead.ts" }
+    ],
+    "rollbackOnError": true
+  }
+}
+```
+
+If operation 4 fails, operations 1-3 are restored from backup before the call
+returns. If everything succeeds, backups are cleaned up.
+
+### Operation kinds
+
+| `type` | Required fields | What it does |
+| --- | --- | --- |
+| `create` | `path`, `content` | Make a new file (creates parent dirs). |
+| `write` | `path`, `content` | Overwrite an existing file. |
+| `update` | `path`, `updates[]` | In-place `String.replace(oldText, newText)` for each update, in order. |
+| `move` | `path`, `destination` | Rename `path` → `destination`. |
+| `delete` | `path` | Remove a file or directory (recursive). |
+
+## Why one tool
+
+Everything else this server used to ship (file I/O, search, git, code
+analysis, shell execution, archives, diffs, metadata, encryption, file
+watcher, …) overlapped with the agent's own built-in tools. Earlier 2.x / 3.x
+versions kept those as wrappers; 4.0 removes them entirely. Your agent already
+has them.
 
 ## Install
 
@@ -28,7 +61,7 @@ Requires Node.js ≥ 18.
 npm install -g ai-filesystem-mcp
 ```
 
-Or run from source:
+Or from source:
 
 ```bash
 git clone https://github.com/proofmath-owner/ai-filesystem-mcp.git
@@ -39,8 +72,6 @@ node dist/index.js
 ```
 
 ## Configure (Claude Code / Codex CLI / any MCP client)
-
-Example `claude_desktop_config.json` / equivalent:
 
 ```json
 {
@@ -53,14 +84,13 @@ Example `claude_desktop_config.json` / equivalent:
 }
 ```
 
-The server speaks stdio JSON-RPC. No network ports are opened.
+Speaks stdio JSON-RPC. No network ports.
 
 ## Trust model
 
-This server is meant to run **locally** alongside a trusted AI agent. It does
-not sandbox absolute filesystem paths or shell out to anything beyond the
-chokidar watcher and Node `crypto`. Treat it like any other process running as
-your user. Do not expose it to untrusted clients.
+Runs locally beside a trusted AI agent as the user that started it. There is
+no path sandbox; the trust boundary is your machine. Do not expose to
+untrusted clients.
 
 ## Development
 
@@ -72,15 +102,7 @@ npm run lint
 npm run format
 ```
 
-The TypeScript build is strict-friendly. `tsc` errors fail the build (no more
-silent `|| true`).
-
-## What used to be here
-
-Earlier 2.x versions shipped ~39 commands covering file I/O, search, git,
-code analysis, shell execution, archives, diffs, metadata, etc. With the
-maturity of Claude Code and Codex CLI, those overlapped with the agent's own
-tools and were removed in 3.0. If you need them, your agent already has them.
+`tsc` errors fail the build. No `tsc || true`.
 
 ## License
 

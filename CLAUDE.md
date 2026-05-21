@@ -4,51 +4,55 @@ Guidance for Claude Code when working **inside this repo**.
 
 ## What this repo is
 
-An MCP (Model Context Protocol) server that exposes **6 tools** focused on
-things modern coding agents (you) cannot do well on your own. It is NOT a
-generic file/git/shell toolbox — those overlap with your built-in Read / Edit
-/ Grep / Bash and were intentionally removed in 3.0.
+A one-tool MCP server. The tool is `transaction`: apply N file operations as
+one atomic batch with automatic rollback. That is the entire product surface.
 
-## Tools the server exposes (do not duplicate these in code)
+It used to ship 39 commands (file I/O, search, git, code analysis, shell,
+archives, …) and that overlap with your built-in tools is exactly why the
+project was pared down. Everything but `transaction` was removed because you
+already have it.
 
-- `transaction` — atomic multi-file write/update/move/delete/create with
-  automatic rollback on failure.
-- `file_watcher` — chokidar-backed watcher that survives across MCP turns
-  (start / stop / status / recent events).
-- `scan_secrets`, `security_audit` — pattern-based secret detection (AWS,
-  GitHub, Slack, Stripe, JWT, RSA/SSH, DB URLs, generic API keys).
-- `encrypt_file`, `decrypt_file` — AES-256-GCM with PBKDF2-SHA256 (600k
-  iters), 12-byte IV, versioned file header. Legacy (pre-header, 100k iters)
-  blobs are still decryptable.
+## The contract
+
+`TransactionCommand` (`src/commands/implementations/batch/TransactionCommand.ts`)
+exposes an MCP tool with this shape — keep code, schema, and README aligned
+on any change:
+
+| `type` | Required | Behavior |
+| --- | --- | --- |
+| `create` | `path`, `content` | New file; `mkdir -p` parent. |
+| `write` | `path`, `content` | Overwrite existing file. |
+| `update` | `path`, `updates[]` | For each `{oldText, newText}` apply `String.replace` in order. |
+| `move` | `path`, `destination` | `fs.rename`. |
+| `delete` | `path` | `unlink` for files, `rm -r` for directories. |
+
+`rollbackOnError` defaults to `true`. On failure, every operation that
+already executed is reverted from a backup taken before the batch ran.
 
 ## Architecture
 
 ```
 src/index.ts                    MCP stdio server entry
-  └── core/ServiceContainer.ts  Minimal DI: 3 services
-        ├── SecurityService     (uses SecretScanner + EncryptionService)
-        ├── TransactionService
-        └── FileWatcherService
+  └── core/ServiceContainer.ts  Minimal DI, registers TransactionService
 src/commands/registry/          BaseCommand / CommandRegistry / CommandLoader
-src/commands/implementations/   6 command classes (one per tool)
+src/commands/implementations/batch/TransactionCommand.ts
+src/core/services/batch/TransactionService.ts   on-disk backup + restore
 ```
 
-Total source: ~22 `.ts` files. Keep it that way unless adding a new tool that
-clearly does not overlap with agent built-ins.
+~9 .ts files total. Keep it that way. No new tools without a very clear
+argument that the agent literally cannot do the thing on its own.
 
 ## Conventions
 
-- Every command extends `BaseCommand` (`src/commands/base/BaseCommand.ts`),
-  implements `validateArgs()` / `executeCommand()`, and registers itself in
+- Every command extends `BaseCommand` (`src/commands/base/BaseCommand.ts`):
+  implement `validateArgs()` + `executeCommand()`, register in
   `CommandLoader.loadCommands()`.
-- Services are pulled from the container via
-  `context.container.getService<T>('serviceName')`.
-- Error path: throw inside `executeCommand`; `BaseCommand.execute` catches and
-  formats as a structured error result.
-- No `child_process.exec` with string interpolation. Anywhere shell is needed
-  in the future, use `execFile` (or `execa`) with array args.
-- TS is strict-friendly. `npm run build` invokes plain `tsc` — do not
-  re-introduce `tsc || true`.
+- Services come from the container:
+  `context.container.getService<T>('transactionService')`.
+- Errors: throw inside `executeCommand`; `BaseCommand.execute` formats them.
+- Use `execFile` (not `exec`) with array args anywhere shell is needed.
+- TS is strict-friendly. `npm run build` is plain `tsc` — do not reintroduce
+  `tsc || true`.
 
 ## Commands
 
@@ -61,21 +65,19 @@ npm run lint
 npm run format
 ```
 
-There is no test suite right now (the legacy Jest tests were tied to the
-removed 39-tool surface). Adding focused tests for the 6 remaining tools is
-a good follow-up.
+No test suite yet — adding focused tests for `transaction` (rollback path,
+each op type, concurrent batches) is the most valuable single follow-up.
 
 ## What NOT to do
 
-- Do not add `read_file` / `write_file` / `search_files` / `execute_shell` /
-  `git_*` style tools. The agent already has them.
-- Do not pull in babel/AST parsers, archive libs, `natural`, or `command-exists`.
-  Those were removed with the categories they served.
-- Do not advertise streaming / worker pools / "100x event-based watching"
-  unless they are actually implemented.
+- Do not add file I/O, search, git, code analysis, or shell tools. The agent
+  already has them. Adding a wrapper just adds latency.
+- Do not advertise streaming, worker pools, or any capability not actually
+  implemented.
+- Do not let `transaction` silently widen its operation set. Every new `type`
+  must update: code, schema, README table, CLAUDE.md table, CHANGELOG.
 
 ## Security posture
 
-Local trusted-agent only. No path sandboxing, no command allowlist — the trust
-boundary is the user's machine. Anything that needs to run server-to-untrusted
-clients would be a separate project.
+Local trusted-agent only. No path sandbox, no shell allowlist. The trust
+boundary is the user's machine.

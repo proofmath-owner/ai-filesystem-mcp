@@ -1,7 +1,7 @@
 {
   "name": "ai-filesystem-mcp",
-  "version": "3.0.0",
-  "description": "Focused MCP server for things AI agents (Claude Code, Codex CLI, etc.) can't easily do themselves: atomic multi-file transactions, persistent file watchers, secret scanning, and password-derived file encryption.",
+  "version": "4.0.0",
+  "description": "Your AI agent's Edit isn't atomic. This MCP makes it so — atomic multi-file changes with rollback for Claude Code, Codex CLI, Cursor agents.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "type": "module",
@@ -38,22 +38,19 @@
   "keywords": [
     "mcp",
     "model-context-protocol",
-    "claude",
+    "claude-code",
     "codex",
-    "secret-scan",
-    "file-watcher",
     "transaction",
-    "encryption"
+    "atomic",
+    "rollback",
+    "ai-agent"
   ],
   "author": "AI FileSystem Team",
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
-    "chokidar": "^3.5.3",
-    "glob": "^10.3.10"
+    "@modelcontextprotocol/sdk": "^1.0.0"
   },
   "devDependencies": {
-    "@types/glob": "^8.1.0",
     "@types/node": "^20.10.0",
     "eslint": "^8.56.0",
     "prettier": "^3.2.0",
