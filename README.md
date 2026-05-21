@@ -47,11 +47,34 @@ returns. If everything succeeds, backups are cleaned up.
 
 ## Why one tool
 
-Everything else this server used to ship (file I/O, search, git, code
-analysis, shell execution, archives, diffs, metadata, encryption, file
-watcher, …) overlapped with the agent's own built-in tools. Earlier 2.x / 3.x
-versions kept those as wrappers; 4.0 removes them entirely. Your agent already
-has them.
+Earlier 2.x versions shipped 39 commands: file I/O, search, git, code
+analysis, shell, archives, diffs, metadata, encryption, file watcher.
+Modern coding agents already do all of that better with their own
+Read / Edit / Write / Grep / Glob / Bash tools — wrapping those in MCP
+only adds latency and a new failure surface.
+
+What an agent's `Edit` cannot do is treat several file changes as one
+unit of work. If op 4 of 5 fails, ops 1-3 are already on disk. Until
+the agent grows a real transaction primitive, that gap is filled
+externally — which is the entire job of this server.
+
+## When you actually need this
+
+You probably don't need it for a typical "fix this bug" turn. You do
+need it when a single logical change must touch several files together:
+
+- DB migration: schema file + matching ORM model + matching test
+  fixtures must all land or all revert.
+- Cross-cutting rename / refactor that spans many files and would
+  half-apply if the agent crashes or runs out of context mid-stream.
+- Generated-code updates where the generator output and the hand-edited
+  glue must stay in sync.
+- Config + corresponding code change (e.g. routing table entry +
+  handler), where the half state is broken.
+
+If your edit fits in one file, just use the agent's `Edit`. If it
+fits in one shell command, just use `Bash`. Reach for `transaction`
+only when "all or nothing" actually matters.
 
 ## Install
 
