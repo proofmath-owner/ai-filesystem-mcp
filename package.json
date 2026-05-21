@@ -47,7 +47,7 @@
     "rollback",
     "ai-agent"
   ],
-  "author": "AI FileSystem Team",
+  "author": "sangbin Na",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0"
