@@ -33,6 +33,9 @@ jobs:
       - name: Type check / build
         run: npm run build
 
+      - name: Unit tests (jest)
+        run: npm test
+
       - name: Smoke start (boot + SIGTERM)
         run: |
           # Portable boot smoke: start the server in the background,

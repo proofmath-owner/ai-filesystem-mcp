@@ -1,6 +1,6 @@
 # Dependencies
 node_modules/
-package-lock.json
+# package-lock.json is committed so CI's `npm ci` is reproducible.
 
 # Build output
 dist/
